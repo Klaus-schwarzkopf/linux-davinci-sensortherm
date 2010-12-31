@@ -2171,6 +2171,16 @@ struct usb_hcd *usb_create_hcd (const struct hc_driver *driver,
 	hcd->driver = driver;
 	hcd->product_desc = (driver->product_desc) ? driver->product_desc :
 			"USB Host Controller";
+
+	/* ehci omap specific */
+	if (hcd->driver->recover_hcd) {
+		INIT_WORK(&hcd->ehci_omap_work, hcd->driver->recover_hcd);
+		hcd->ehci_omap_wq =
+				create_singlethread_workqueue(dev_name(dev));
+		if (hcd->ehci_omap_wq == NULL)
+			printk(KERN_ERR "Unable to create ehci_omap_wq !!\n");
+	}
+
 	return hcd;
 }
 EXPORT_SYMBOL_GPL(usb_create_hcd);
@@ -2178,6 +2188,10 @@ EXPORT_SYMBOL_GPL(usb_create_hcd);
 static void hcd_release (struct kref *kref)
 {
 	struct usb_hcd *hcd = container_of (kref, struct usb_hcd, kref);
+
+	/* ehci omap specific */
+	if (hcd->driver->recover_hcd && hcd->ehci_omap_wq)
+		destroy_workqueue(hcd->ehci_omap_wq);
 
 	kfree(hcd);
 }

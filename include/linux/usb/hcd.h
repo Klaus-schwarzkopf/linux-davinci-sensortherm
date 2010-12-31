@@ -84,6 +84,8 @@ struct usb_hcd {
 	struct work_struct	wakeup_work;	/* for remote wakeup */
 #endif
 
+	struct work_struct ehci_omap_work;
+	struct workqueue_struct *ehci_omap_wq;
 	/*
 	 * hardware info/state
 	 */
@@ -259,6 +261,9 @@ struct hc_driver {
 		/* CLEAR_TT_BUFFER completion callback */
 	void	(*clear_tt_buffer_complete)(struct usb_hcd *,
 				struct usb_host_endpoint *);
+
+		/* OMAP ehci controller specific */
+	void	(*recover_hcd)(struct work_struct *data);
 
 	/* xHCI specific functions */
 		/* Called by usb_alloc_dev to alloc HC device structures */
