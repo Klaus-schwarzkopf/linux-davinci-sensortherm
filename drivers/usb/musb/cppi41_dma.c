@@ -738,7 +738,7 @@ static unsigned cppi41_next_rx_segment(struct cppi41_channel *rx_ch)
 		 * probably fit this transfer in one PD and one IRQ
 		 * (or two with a short packet).
 		 */
-		if ((pkt_size & 0x3f) == 0 && length >= 2 * pkt_size) {
+		if ((pkt_size & 0x3f) == 0 && length > pkt_size) {
 			cppi41_mode_update(rx_ch, USB_GENERIC_RNDIS_MODE);
 			cppi41_autoreq_update(rx_ch, USB_AUTOREQ_ALL_BUT_EOP);
 
@@ -1307,7 +1307,7 @@ static void usb_process_rx_queue(struct cppi41 *cppi, unsigned index)
 		usb_put_free_pd(cppi, curr_pd);
 
 		if (unlikely(rx_ch->channel.actual_len >= rx_ch->length ||
-			     length < curr_pd->hw_desc.orig_buf_len)) {
+			     (rx_ch->channel.actual_len % rx_ch->pkt_size != 0))) {
 			rx_ch->channel.status = MUSB_DMA_STATUS_FREE;
 
 			/* Rx completion routine callback */
@@ -1316,6 +1316,11 @@ static void usb_process_rx_queue(struct cppi41 *cppi, unsigned index)
 			if (is_peripheral_active(cppi->musb) &&
 				((rx_ch->length - rx_ch->curr_offset) > 0))
 				cppi41_next_rx_segment(rx_ch);
+			else if (is_host_enabled(cppi->musb) &&
+				(rx_ch->channel.actual_len < rx_ch->length)) {
+				rx_ch->curr_offset = rx_ch->channel.actual_len;
+				cppi41_next_rx_segment(rx_ch);
+			}
 		}
 	}
 }
