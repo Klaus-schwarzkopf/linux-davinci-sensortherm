@@ -728,3 +728,91 @@ int __init da8xx_register_cpuidle(void)
 
 	return platform_device_register(&da8xx_cpuidle_device);
 }
+
+static struct resource da8xx_spi0_resources[] = {
+	[0] = {
+		.start = 0x01c41000,
+		.end   = 0x01c41fff,
+		.flags = IORESOURCE_MEM,
+	},
+	[1] = {
+		.start = IRQ_DA8XX_SPINT0,
+		.end = IRQ_DA8XX_SPINT0,
+		.flags = IORESOURCE_IRQ,
+	},
+	[2] = {
+		.start = EDMA_CTLR_CHAN(0, 14),
+		.end = EDMA_CTLR_CHAN(0, 14),
+		.flags = IORESOURCE_DMA,
+	},
+	[3] = {
+		.start = EDMA_CTLR_CHAN(0, 15),
+		.end = EDMA_CTLR_CHAN(0, 15),
+		.flags = IORESOURCE_DMA,
+	},
+	[4] = {
+		.start = 0,
+		.end = 0,
+		.flags = IORESOURCE_DMA,
+	},
+};
+
+static struct resource da8xx_spi1_resources[] = {
+	[0] = {
+		.start = 0x01f0e000,
+		.end   = 0x01f0efff,
+		.flags = IORESOURCE_MEM,
+	},
+	[1] = {
+		.start = IRQ_DA8XX_SPINT1,
+		.end = IRQ_DA8XX_SPINT1,
+		.flags = IORESOURCE_IRQ,
+	},
+	[2] = {
+		.start = EDMA_CTLR_CHAN(0, 18),
+		.end = EDMA_CTLR_CHAN(0, 18),
+		.flags = IORESOURCE_DMA,
+	},
+	[3] = {
+		.start = EDMA_CTLR_CHAN(0, 19),
+		.end = EDMA_CTLR_CHAN(0, 19),
+		.flags = IORESOURCE_DMA,
+	},
+	[4] = {
+		.start = 0,
+		.end = 0,
+		.flags = IORESOURCE_DMA,
+	},
+};
+
+static struct platform_device da8xx_spi_device[] = {
+	[0] = {
+		.name = "spi_davinci",
+		.id = 0,
+		.num_resources = ARRAY_SIZE(da8xx_spi0_resources),
+		.resource = da8xx_spi0_resources,
+	},
+	[1] = {
+		.name = "spi_davinci",
+		.id = 1,
+		.num_resources = ARRAY_SIZE(da8xx_spi1_resources),
+		.resource = da8xx_spi1_resources,
+	},
+};
+
+int __init da8xx_register_spi(int instance,
+			      struct davinci_spi_platform_data *pdata)
+{
+	struct platform_device *pdev;
+
+	if (instance == 0)
+		pdev = &da8xx_spi_device[0];
+	else if (instance == 1)
+		pdev = &da8xx_spi_device[1];
+	else
+		return -EINVAL;
+
+	pdev->dev.platform_data = pdata;
+
+	return platform_device_register(pdev);
+}

@@ -345,6 +345,20 @@ static struct clk aemif_clk = {
 	.flags		= ALWAYS_ENABLED,
 };
 
+static struct clk spi0_clk = {
+	.name		= "spi0",
+	.parent		= &pll0_sysclk2,
+	.lpsc		= DA8XX_LPSC0_SPI0,
+};
+
+static struct clk spi1_clk = {
+	.name		= "spi1",
+	.parent		= &pll0_sysclk2,
+	.lpsc		= DA8XX_LPSC1_SPI1,
+	.gpsc		= 1,
+	.flags		= DA850_CLK_ASYNC3,
+};
+
 static struct clk_lookup da850_clks[] = {
 	CLK(NULL,		"ref",		&ref_clk),
 	CLK(NULL,		"pll0",		&pll0_clk),
@@ -387,6 +401,8 @@ static struct clk_lookup da850_clks[] = {
 	CLK("davinci_mmc.0",	NULL,		&mmcsd0_clk),
 	CLK("davinci_mmc.1",	NULL,		&mmcsd1_clk),
 	CLK(NULL,		"aemif",	&aemif_clk),
+	CLK("spi_davinci.0",	NULL,		&spi0_clk),
+	CLK("spi_davinci.1",	NULL,		&spi1_clk),
 	CLK(NULL,		NULL,		NULL),
 };
 
