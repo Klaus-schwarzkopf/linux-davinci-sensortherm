@@ -737,20 +737,6 @@ static struct pca953x_platform_data da850_evm_bb_expander_info = {
 	.names		= da850_evm_bb_exp,
 };
 
-static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
-	{
-		I2C_BOARD_INFO("tlv320aic3x", 0x18),
-	},
-	{
-		I2C_BOARD_INFO("tca6416", 0x20),
-		.platform_data = &da850_evm_ui_expander_info,
-	},
-	{
-		I2C_BOARD_INFO("tca6416", 0x21),
-		.platform_data = &da850_evm_bb_expander_info,
-	},
-};
-
 static struct davinci_uart_config da850_evm_uart_config __initdata = {
 	.enabled_uarts = 0x7,
 };
@@ -993,18 +979,23 @@ static struct tps6507x_board tps_board = {
 	.tps6507x_ts_init_data = &tps6507x_touchscreen_data,
 };
 
-static struct i2c_board_info __initdata da850_evm_tps65070_info[] = {
+static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
+	{
+		I2C_BOARD_INFO("tlv320aic3x", 0x18),
+	},
+	{
+		I2C_BOARD_INFO("tca6416", 0x20),
+		.platform_data = &da850_evm_ui_expander_info,
+	},
+	{
+		I2C_BOARD_INFO("tca6416", 0x21),
+		.platform_data = &da850_evm_bb_expander_info,
+	},
 	{
 		I2C_BOARD_INFO("tps6507x", 0x48),
 		.platform_data = &tps_board,
 	},
 };
-
-static int __init pmic_tps65070_init(void)
-{
-	return i2c_register_board_info(1, da850_evm_tps65070_info,
-					ARRAY_SIZE(da850_evm_tps65070_info));
-}
 
 static const short da850_evm_lcdc_pins[] = {
 	DA850_GPIO2_8, DA850_GPIO2_15,
@@ -1176,11 +1167,6 @@ static struct platform_device da850_gpio_i2c = {
 static __init void da850_evm_init(void)
 {
 	int ret;
-
-	ret = pmic_tps65070_init();
-	if (ret)
-		pr_warning("da850_evm_init: TPS65070 PMIC init failed: %d\n",
-				ret);
 
 	ret = da850_register_edma(da850_edma_rsv);
 	if (ret)
