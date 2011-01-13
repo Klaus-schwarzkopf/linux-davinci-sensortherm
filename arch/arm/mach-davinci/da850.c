@@ -342,7 +342,6 @@ static struct clk aemif_clk = {
 	.name		= "aemif",
 	.parent		= &pll0_sysclk3,
 	.lpsc		= DA8XX_LPSC0_EMIF25,
-	.flags		= ALWAYS_ENABLED,
 };
 
 static struct clk spi0_clk = {
