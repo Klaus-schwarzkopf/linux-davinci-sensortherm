@@ -121,6 +121,23 @@ static struct spi_board_info da850evm_spi_info[] = {
 	},
 };
 
+static void m25p80_notify_add(struct mtd_info *mtd)
+{
+	char *mac_addr = davinci_soc_info.emac_pdata->mac_addr;
+	size_t retlen;
+
+	if (!strcmp(mtd->name, "MAC-Address")) {
+		mtd->read(mtd, 0, ETH_ALEN, &retlen, mac_addr);
+		if (retlen == ETH_ALEN)
+			pr_info("Read MAC addr from SPI Flash: %pM\n",
+					mac_addr);
+	}
+}
+
+static struct mtd_notifier spi_notifier = {
+	.add    = m25p80_notify_add,
+};
+
 static void __init da850evm_init_spi1(struct spi_board_info *info, unsigned len)
 {
 	int ret;
@@ -132,6 +149,8 @@ static void __init da850evm_init_spi1(struct spi_board_info *info, unsigned len)
 	ret = da8xx_register_spi(1, &da850evm_spi1_pdata);
 	if (ret)
 		pr_warning("failed to register spi 1 device : %d\n", ret);
+
+	register_mtd_user(&spi_notifier);
 }
 
 static struct mtd_partition da850_evm_norflash_partition[] = {
