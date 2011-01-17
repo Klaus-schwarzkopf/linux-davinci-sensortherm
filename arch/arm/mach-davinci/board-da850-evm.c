@@ -350,7 +350,7 @@ static inline void da850_evm_setup_nor_nand(void)
 {
 	int ret = 0;
 
-	if (ui_card_detected & !HAS_MMC) {
+	if (ui_card_detected && !HAS_MMC) {
 		ret = davinci_cfg_reg_list(da850_evm_nand_pins);
 		if (ret)
 			pr_warning("da850_evm_init: nand mux setup failed: "
