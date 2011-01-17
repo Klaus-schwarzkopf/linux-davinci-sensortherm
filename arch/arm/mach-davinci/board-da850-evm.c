@@ -53,6 +53,8 @@
 
 #define DA850_MII_MDIO_CLKEN_PIN	GPIO_TO_PIN(2, 6)
 
+#define DA850_SD_ENABLE_PIN		GPIO_TO_PIN(0, 11)
+
 static struct davinci_spi_platform_data da850evm_spi1_pdata = {
 	.version	= SPI_VERSION_2,
 	.num_chipselect = 1,
@@ -356,6 +358,19 @@ static inline void da850_evm_setup_nor_nand(void)
 			pr_warning("da850_evm_init: nand mux setup failed: "
 					"%d\n", ret);
 
+		ret = davinci_cfg_reg(DA850_GPIO0_11);
+		if (ret)
+			pr_warning("da850_evm_init:GPIO(0,11) mux setup "
+					"failed\n");
+
+		ret = gpio_request(DA850_SD_ENABLE_PIN, "mmc_sd_en");
+		if (ret)
+			pr_warning("Cannot open GPIO %d\n",
+					DA850_SD_ENABLE_PIN);
+
+		/* Driver GP0[11] low for NOR to work */
+		gpio_direction_output(DA850_SD_ENABLE_PIN, 0);
+
 		ret = davinci_cfg_reg_list(da850_evm_nor_pins);
 		if (ret)
 			pr_warning("da850_evm_init: nor mux setup failed: %d\n",
@@ -363,6 +378,31 @@ static inline void da850_evm_setup_nor_nand(void)
 
 		platform_add_devices(da850_evm_devices,
 					ARRAY_SIZE(da850_evm_devices));
+	} else if (ui_card_detected && HAS_MMC) {
+		/*
+		 * On Logic PD Rev.3 EVMs GP0[11] pin needs to be configured
+		 * for MMC and NOR to work. When GP0[11] is low, the SD0
+		 * interface will not work, but NOR flash will. When GP0[11]
+		 * is high, SD0 will work but NOR flash will not. By default
+		 * we are assuming that GP0[11] pin is driven high, when UI
+		 * card is not connected. Hence we are not configuring the
+		 * GP0[11] pin when MMC/SD is enabled and UI card is not
+		 * connected. Not configuring the GPIO pin will enable the
+		 * bluetooth to work on AM18x as it requires the GP0[11]
+		 * pin for UART flow control.
+		 */
+		ret = davinci_cfg_reg(DA850_GPIO0_11);
+		if (ret)
+			pr_warning("da850_evm_init:GPIO(0,11) mux setup "
+					"failed\n");
+
+		ret = gpio_request(DA850_SD_ENABLE_PIN, "mmc_sd_en");
+		if (ret)
+			pr_warning("Cannot open GPIO %d\n",
+					DA850_SD_ENABLE_PIN);
+
+		/* Driver GP0[11] high for SD to work */
+		gpio_direction_output(DA850_SD_ENABLE_PIN, 1);
 	}
 }
 

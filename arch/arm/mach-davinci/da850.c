@@ -461,7 +461,6 @@ static const struct mux_config da850_pins[] = {
 	MUX_CFG(DA850,	ACLKX,		0,	4,	15,	1,	false)
 	MUX_CFG(DA850,	AFSR,		0,	8,	15,	1,	false)
 	MUX_CFG(DA850,	AFSX,		0,	12,	15,	1,	false)
-	MUX_CFG(DA850,	AHCLKR,		0,	16,	15,	1,	false)
 	MUX_CFG(DA850,	AHCLKX,		0,	20,	15,	1,	false)
 	MUX_CFG(DA850,	AMUTE,		0,	24,	15,	1,	false)
 	MUX_CFG(DA850,	AXR_15,		1,	0,	15,	1,	false)
@@ -566,6 +565,7 @@ static const struct mux_config da850_pins[] = {
 	MUX_CFG(DA850, GPIO4_1,		10,	24,	15,	8,	false)
 	MUX_CFG(DA850, GPIO1_4,		4,	12,	15,	8,	false)
 	MUX_CFG(DA850, GPIO1_5,		4,	8,	15,	8,	false)
+	MUX_CFG(DA850, GPIO0_11,	0,	16,	15,	8,	false)
 	MUX_CFG(DA850, RTC_ALARM,	0,	28,	15,	2,	false)
 #endif
 };
@@ -608,7 +608,7 @@ const short da850_cpgmac_pins[] __initdata = {
 
 const short da850_mcasp_pins[] __initdata = {
 	DA850_AHCLKX, DA850_ACLKX, DA850_AFSX,
-	DA850_AHCLKR, DA850_ACLKR, DA850_AFSR, DA850_AMUTE,
+	DA850_ACLKR, DA850_AFSR, DA850_AMUTE,
 	DA850_AXR_11, DA850_AXR_12,
 	-1
 };
