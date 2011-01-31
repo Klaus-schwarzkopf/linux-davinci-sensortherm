@@ -236,15 +236,6 @@ static struct davinci_ks_platform_data dm365evm_ks_data = {
 	.matrix_type	= DAVINCI_KEYSCAN_MATRIX_4X4,
 };
 
-static int cpld_mmc_get_cd(int module)
-{
-	if (!cpld)
-		return -ENXIO;
-
-	/* low == card present */
-	return !(__raw_readb(cpld + CPLD_CARDSTAT) & BIT(module ? 4 : 0));
-}
-
 static int cpld_mmc_get_ro(int module)
 {
 	if (!cpld)
@@ -255,7 +246,6 @@ static int cpld_mmc_get_ro(int module)
 }
 
 static struct davinci_mmc_config dm365evm_mmc_config = {
-	.get_cd		= cpld_mmc_get_cd,
 	.get_ro		= cpld_mmc_get_ro,
 	.wires		= 4,
 	.max_freq	= 50000000,
