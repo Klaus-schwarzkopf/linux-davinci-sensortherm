@@ -802,6 +802,14 @@ static struct snd_platform_data da850_evm_snd_data = {
 	.rxnumevt	= 1,
 };
 
+static struct davinci_mcbsp_platform_data da850_mcbsp0_config = {
+	.inst	= 0,
+};
+
+static struct davinci_mcbsp_platform_data da850_mcbsp1_config = {
+	.inst	= 1,
+};
+
 static int da850_evm_mmc_get_ro(int index)
 {
 	return gpio_get_value(DA850_MMCSD_WP_PIN);
@@ -1204,6 +1212,31 @@ static struct platform_device da850_gpio_i2c = {
 	},
 };
 
+#if defined(CONFIG_DAVINCI_MCBSP0)
+#define HAS_MCBSP0 1
+#else
+#define HAS_MCBSP0 0
+#endif
+
+#if defined(CONFIG_DAVINCI_MCBSP1)
+#define HAS_MCBSP1 1
+#else
+#define HAS_MCBSP1 0
+#endif
+
+#if defined(CONFIG_TI_DAVINCI_EMAC) || \
+	defined(CONFIG_TI_DAVINCI_EMAC_MODULE)
+#define HAS_EMAC 1
+#else
+#define HAS_EMAC 0
+#endif
+
+#if defined(CONFIG_SND_DA850_SOC_EVM)
+#define HAS_MCASP 1
+#else
+#define HAS_MCASP 0
+#endif
+
 static __init void da850_evm_init(void)
 {
 	int ret;
@@ -1262,12 +1295,48 @@ static __init void da850_evm_init(void)
 	__raw_writel(0, IO_ADDRESS(DA8XX_UART1_BASE) + 0x30);
 	__raw_writel(0, IO_ADDRESS(DA8XX_UART0_BASE) + 0x30);
 
-	ret = davinci_cfg_reg_list(da850_mcasp_pins);
-	if (ret)
-		pr_warning("da850_evm_init: mcasp mux setup failed: %d\n",
-				ret);
+	if (HAS_MCBSP0) {
+		if (HAS_EMAC)
+			pr_warning("WARNING: both MCBSP0 and EMAC are "
+				"enabled, but they share pins.\n"
+				"\tDisable one of them.\n");
 
-	da8xx_register_mcasp(0, &da850_evm_snd_data);
+		ret = davinci_cfg_reg_list(da850_mcbsp0_pins);
+		if (ret)
+			pr_warning("da850_evm_init: mcbsp0 mux setup failed:"
+					" %d\n", ret);
+
+		ret = da850_init_mcbsp(&da850_mcbsp0_config);
+		if (ret)
+			pr_warning("da850_evm_init: mcbsp0 registration"
+					"failed: %d\n",	ret);
+	}
+
+	if (HAS_MCBSP1) {
+		ret = davinci_cfg_reg_list(da850_mcbsp1_pins);
+		if (ret)
+			pr_warning("da850_evm_init: mcbsp1 mux setup failed:"
+					" %d\n", ret);
+
+		ret = da850_init_mcbsp(&da850_mcbsp1_config);
+		if (ret)
+			pr_warning("da850_evm_init: mcbsp1 registration"
+					" failed: %d\n", ret);
+	}
+	 
+	if (HAS_MCASP) {
+		if ((HAS_MCBSP0 || HAS_MCBSP1))
+			pr_warning("WARNING: both McASP and McBSP are enabled, "
+					"but they share pins.\n"
+					"\tDisable one of them.\n");
+
+		ret = davinci_cfg_reg_list(da850_mcasp_pins);
+		if (ret)
+			pr_warning("da850_evm_init: mcasp mux setup failed:"
+					"%d\n", ret);
+
+		da8xx_register_mcasp(0, &da850_evm_snd_data);
+	}
 
 	ret = davinci_cfg_reg_list(da850_lcdcntl_pins);
 	if (ret)

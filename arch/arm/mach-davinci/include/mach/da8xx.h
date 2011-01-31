@@ -24,6 +24,7 @@
 #include <mach/usb.h>
 #include <mach/pm.h>
 #include <mach/spi.h>
+#include <mach/mcbsp.h>
 
 extern void __iomem *da8xx_syscfg0_base;
 extern void __iomem *da8xx_syscfg1_base;
@@ -93,6 +94,7 @@ int da850_register_cpufreq(char *async_clk);
 int da8xx_register_cpuidle(void);
 void __iomem * __init da8xx_get_mem_ctlr(void);
 int da850_register_pm(struct platform_device *pdev);
+int da850_init_mcbsp(struct davinci_mcbsp_platform_data *pdata);
 
 extern struct platform_device da8xx_serial_device;
 extern struct emac_platform_data da8xx_emac_pdata;
@@ -136,5 +138,7 @@ extern const short da850_mcasp_pins[];
 extern const short da850_lcdcntl_pins[];
 extern const short da850_mmcsd0_pins[];
 extern const short da850_emif25_pins[];
+extern const short da850_mcbsp0_pins[];
+extern const short da850_mcbsp1_pins[];
 
 #endif /* __ASM_ARCH_DAVINCI_DA8XX_H */
