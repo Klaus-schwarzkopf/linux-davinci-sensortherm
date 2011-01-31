@@ -52,6 +52,7 @@ struct davinci_soc_info {
 	u32				cpu_id;
 	u32				jtag_id;
 	u32				jtag_id_reg;
+	u8				cpld_version;
 	struct davinci_id		*ids;
 	unsigned long			ids_num;
 	struct clk_lookup		*cpu_clks;

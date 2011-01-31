@@ -49,6 +49,15 @@ IS_DAVINCI_CPU(da830, DAVINCI_CPU_ID_DA830)
 IS_DAVINCI_CPU(da850, DAVINCI_CPU_ID_DA850)
 IS_DAVINCI_CPU(tnetv107x, DAVINCI_CPU_ID_TNETV107X)
 
+#define IS_DAVINCI_CPU_CPLD_VER(type, id, cpld_ver)			\
+static inline int is_davinci_ ##type(void)				\
+{									\
+	return ((davinci_soc_info.cpu_id == (id)) &&			\
+		(davinci_soc_info.cpld_version == (cpld_ver)));		\
+}
+
+IS_DAVINCI_CPU_CPLD_VER(dm368, DAVINCI_CPU_ID_DM365, 0x21)
+
 #ifdef CONFIG_ARCH_DAVINCI_DM644x
 #define cpu_is_davinci_dm644x() is_davinci_dm644x()
 #else
@@ -69,8 +78,10 @@ IS_DAVINCI_CPU(tnetv107x, DAVINCI_CPU_ID_TNETV107X)
 
 #ifdef CONFIG_ARCH_DAVINCI_DM365
 #define cpu_is_davinci_dm365() is_davinci_dm365()
+#define cpu_is_davinci_dm368() is_davinci_dm368()
 #else
 #define cpu_is_davinci_dm365() 0
+#define cpu_is_davinci_dm368() 0
 #endif
 
 #ifdef CONFIG_ARCH_DAVINCI_DA830
