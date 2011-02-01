@@ -41,6 +41,15 @@ config ARCH_DAVINCI_DA850
 	select ARCH_DAVINCI_DA8XX
 	select ARCH_HAS_CPUFREQ
 
+config DAVINCI_UART1_AFE
+	bool "Enable UART1 flow control"
+	depends on SERIAL_8250=y && ARCH_DAVINCI_DA850=y
+	help
+	  Say Y here if you want to enable flow control on UART1.
+	  This flag enables the UART1 RTS/CTS lines pinmuxing only if
+	  McASP is not selected. That is McASP pinmuxing overrides
+	  enabling of UART1 RTS/CTS.
+
 config ARCH_DAVINCI_DA8XX
 	select CPU_ARM926T
 	bool
