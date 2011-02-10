@@ -104,7 +104,6 @@ static struct flash_platform_data da850evm_spiflash_data = {
 	.name		= "m25p80",
 	.parts		= da850evm_spiflash_part,
 	.nr_parts	= ARRAY_SIZE(da850evm_spiflash_part),
-	.type		= "m25p64",
 };
 
 static struct davinci_spi_config da850evm_spiflash_cfg = {
@@ -1407,6 +1406,14 @@ static __init void da850_evm_init(void)
 	if (ret)
 		pr_warning("da850_evm_init: suspend registration failed: %d\n",
 				ret);
+
+	if (system_rev & 0x100) {
+		((struct flash_platform_data *)da850evm_spi_info[0] \
+		.platform_data)->type = "w25x64";
+	} else {
+		((struct flash_platform_data *)da850evm_spi_info[0] \
+		.platform_data)->type = "m25p64";
+	}
 
 	da850evm_init_spi1(da850evm_spi_info, ARRAY_SIZE(da850evm_spi_info));
 }
