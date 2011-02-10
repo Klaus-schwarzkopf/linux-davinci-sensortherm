@@ -510,6 +510,14 @@ static inline void da850_evm_setup_char_lcd(int a, int b, int c)
 static inline void da850_evm_setup_char_lcd(int a, int b, int c) { }
 #endif
 
+static struct at24_platform_data da850_evm_i2c_eeprom_info = {
+	.byte_len	= SZ_256K / 8,
+	.page_size	= 64,
+	.flags		= AT24_FLAG_ADDR16,
+	.setup		= davinci_get_mac_addr,
+	.context	= (void *)0x7f00,
+};
+
 static int da850_evm_ui_expander_setup(struct i2c_client *client, unsigned gpio,
 						unsigned ngpio, void *c)
 {
@@ -1028,6 +1036,10 @@ static struct tps6507x_board tps_board = {
 };
 
 static struct i2c_board_info __initdata da850_evm_i2c_devices[] = {
+	{
+		I2C_BOARD_INFO("24c256", 0x50),
+		.platform_data = &da850_evm_i2c_eeprom_info,
+	},
 	{
 		I2C_BOARD_INFO("tlv320aic3x", 0x18),
 	},
