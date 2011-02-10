@@ -154,7 +154,8 @@ static void __init da850evm_init_spi1(struct spi_board_info *info, unsigned len)
 	if (ret)
 		pr_warning("failed to register spi 1 device : %d\n", ret);
 
-	register_mtd_user(&spi_notifier);
+	if (!(system_rev & 0x100))
+		register_mtd_user(&spi_notifier);
 }
 
 static struct mtd_partition da850_evm_norflash_partition[] = {
