@@ -170,7 +170,7 @@ static int get_shutter(struct v4l2_subdev *sd, u32 *data)
 	return ret < 0 ? ret : 0;
 }
 
-static int mt9t031_init(struct i2c_client *client)
+static int mt9t031_init(struct v4l2_subdev *sd, u32 val)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
@@ -273,13 +273,6 @@ static const struct v4l2_queryctrl mt9t031_controls[] = {
 };
 static const unsigned int mt9t031_num_controls = ARRAY_SIZE(mt9t031_controls);
 
-static struct soc_camera_ops mt9t031_ops = {
-	.set_bus_param		= mt9t031_set_bus_param,
-	.query_bus_param	= mt9t031_query_bus_param,
-	.controls		= mt9t031_controls,
-	.num_controls		= ARRAY_SIZE(mt9t031_controls),
-};
-
 const struct v4l2_queryctrl *mt9t031_find_qctrl(u32 id)
 {
 	int i;
@@ -294,7 +287,7 @@ const struct v4l2_queryctrl *mt9t031_find_qctrl(u32 id)
 static int mt9t031_set_params(struct v4l2_subdev *sd,
 			      struct v4l2_rect *rect, u16 xskip, u16 yskip)
 {
-	truct mt9t031 *mt9t031 = to_mt9t031(sd);
+	struct mt9t031 *mt9t031 = to_mt9t031(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 	u16 xbin, ybin, width, height, left, top;
@@ -439,6 +432,8 @@ static int mt9t031_set_fmt(struct v4l2_subdev *sd, struct v4l2_format *f)
 
 static int mt9t031_try_fmt(struct v4l2_subdev *sd, struct v4l2_format *f)
 {
+	struct v4l2_pix_format *pix = &f->fmt.pix;
+
 	if (pix->height < MT9T031_MIN_HEIGHT)
 		pix->height = MT9T031_MIN_HEIGHT;
 	if (pix->height > MT9T031_MAX_HEIGHT)
@@ -706,16 +701,6 @@ static int mt9t031_detect(struct i2c_client *client,  int *model)
 	return 0;
 }
 
-static int mt9t031_g_skip_top_lines(struct v4l2_subdev *sd, u32 *lines)
-{
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct mt9t031 *mt9t031 = to_mt9t031(client);
-
-	*lines = mt9t031->y_skip_top;
-
-	return 0;
-}
-
 static int mt9t031_get_control(struct v4l2_subdev *, struct v4l2_control *);
 static int mt9t031_set_control(struct v4l2_subdev *, struct v4l2_control *);
 static int mt9t031_queryctrl(struct v4l2_subdev *, struct v4l2_queryctrl *);
@@ -733,34 +718,14 @@ static const struct v4l2_subdev_core_ops mt9t031_core_ops = {
 };
 
 static const struct v4l2_subdev_video_ops mt9t031_video_ops = {
-	.s_fmt = mt9t031_set_fmt,
-	.try_fmt = mt9t031_try_fmt,
+	.s_mbus_fmt = mt9t031_set_fmt,
+	.try_mbus_fmt = mt9t031_try_fmt,
 	.s_stream = mt9t031_s_stream,
 };
 
 static const struct v4l2_subdev_ops mt9t031_ops = {
 	.core = &mt9t031_core_ops,
 	.video = &mt9t031_video_ops,
-};
-
-static int mt9t031_enum_fmt(struct v4l2_subdev *sd, unsigned int index,
-			    enum v4l2_mbus_pixelcode *code)
-{
-	if (index)
-		return -EINVAL;
-
-	*code = V4L2_MBUS_FMT_SBGGR10_1X10;
-	return 0;
-}
-
-static struct v4l2_subdev_sensor_ops mt9t031_subdev_sensor_ops = {
-	.g_skip_top_lines	= mt9t031_g_skip_top_lines,
-};
-
-static struct v4l2_subdev_ops mt9t031_subdev_ops = {
-	.core	= &mt9t031_subdev_core_ops,
-	.video	= &mt9t031_subdev_video_ops,
-	.sensor	= &mt9t031_subdev_sensor_ops,
 };
 
 static int mt9t031_probe(struct i2c_client *client,
