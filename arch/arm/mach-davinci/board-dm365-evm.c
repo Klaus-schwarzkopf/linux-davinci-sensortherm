@@ -893,7 +893,9 @@ static const struct {
 	{ "dm365evm::ds3", },
 	{ "dm365evm::ds4", },
 	{ "dm365evm::ds5", },
-	{ "dm365evm::ds6", "nand-disk", },
+	/* Currently assigning led trigger to nand-disk breaks nand module.
+	   Dont associate any trigger to nand-disk */
+	{ "dm365evm::ds6", },
 	{ "dm365evm::ds7", "mmc1", },
 	{ "dm365evm::ds8", "mmc0", },
 	{ "dm365evm::ds9", "heartbeat", },
