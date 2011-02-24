@@ -2053,6 +2053,28 @@ static __init int vpif_probe(struct platform_device *pdev)
 
 	for (i = 0; i < subdev_count; i++) {
 		subdevdata = &config->subdev_info[i];
+		/**
+		 * register subdevices based on interface setting. Currently
+		 * tvp5146 and mt9t031 cannot co-exists due to i2c address
+		 * conflicts. So only one of them is registered. Re-visit this
+		 * once we have support for i2c switch handling in i2c driver
+		 * framework
+		 */
+		if (cpu_is_davinci_da850() &&
+				!strcmp(subdevdata->name, "mt9t031")) {
+			if (config->setup_input_path) {
+				if (config->setup_input_path(ch->channel_id,
+							subdevdata->name)) {
+					err = -EFAULT;
+					v4l2_info(vpif_dev->driver, "could"
+							" not setup"
+							"input for %s\n",
+							subdevdata->name);
+					goto probe_subdev_out;
+				}
+
+			}
+		}
 		vpif_obj.sd[i] =
 			v4l2_i2c_new_subdev_board(&vpif_obj.v4l2_dev,
 						  i2c_adap,

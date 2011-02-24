@@ -18,6 +18,7 @@
 
 #include <linux/io.h>
 #include <linux/videodev2.h>
+#include <mach/cputype.h>
 #include <mach/hardware.h>
 #include <mach/vpif.h>
 

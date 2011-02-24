@@ -1146,7 +1146,7 @@ static struct i2c_driver pca9543a_driver = {
 static int da850_enable_pca9543a(int en)
 {
 	static char val = 1;
-	int status;
+	int status = 1;
 	struct i2c_msg msg = {
 			.flags = 0,
 			.len = 1,
@@ -1163,9 +1163,10 @@ static int da850_enable_pca9543a(int en)
 	msg.addr = pca9543a->addr;
 	/* turn i2c switch, pca9543a, on/off */
 	status = i2c_transfer(pca9543a->adapter, &msg, 1);
-	pr_info("da850evm_enable_pca9543a, status = %d\n", status);
+	if (status == 1)
+		status = 0;
+
 	return status;
-	return 0;
 }
 
 static const short da850_evm_mii_pins[] = {
@@ -1353,6 +1354,18 @@ static int da850_setup_vpif_input_channel_mode(int mux_mode)
 	return 0;
 }
 
+/*Enable mt9t031 by configuring pca9543a i2c switch on sensor
+ */
+int da850_vpif_setup_input_path(int ch, const char *name)
+{
+	int ret = 0;
+
+	if (have_imager())
+		ret = da850_enable_pca9543a(1);
+
+	return ret;
+}
+
 static int da850_vpif_intr_status(void __iomem *vpif_base, int channel)
 {
 	int status = 0;
@@ -1454,6 +1467,7 @@ static const struct vpif_input da850_ch1_inputs[] = {
 
 static struct vpif_capture_config da850_vpif_capture_config = {
 	.setup_input_channel_mode = da850_setup_vpif_input_channel_mode,
+	.setup_input_path = da850_vpif_setup_input_path,
 	.intr_status = da850_vpif_intr_status,
 	.subdev_info = da850_vpif_capture_sdev_info,
 	.subdev_count = ARRAY_SIZE(da850_vpif_capture_sdev_info),
@@ -1626,8 +1640,6 @@ static __init void da850_evm_init(void)
 	i2c_register_board_info(1, da850_evm_i2c_devices,
 			ARRAY_SIZE(da850_evm_i2c_devices));
 
-	if (have_imager())
-		da850_enable_pca9543a(1);
 	/*
 	 * shut down uart 0 and 1; they are not used on the board and
 	 * accessing them causes endless "too much work in irq53" messages
