@@ -45,6 +45,10 @@
 static int debug;
 static u32 video2_numbuffers = 3;
 static u32 video3_numbuffers = 3;
+static u32 cont2_bufoffset;
+static u32 cont2_bufsize;
+static u32 cont3_bufoffset;
+static u32 cont3_bufsize;
 
 #define VPBE_DISPLAY_SD_BUF_SIZE (720*576*2)
 #define VPBE_DISPLAY_HD_BUF_SIZE (1920*1080*2)
@@ -58,7 +62,16 @@ module_param(video2_numbuffers, uint, S_IRUGO);
 module_param(video3_numbuffers, uint, S_IRUGO);
 module_param(video2_bufsize, uint, S_IRUGO);
 module_param(video3_bufsize, uint, S_IRUGO);
+module_param(cont2_bufoffset, uint, S_IRUGO);
+module_param(cont2_bufsize, uint, S_IRUGO);
+module_param(cont3_bufoffset, uint, S_IRUGO);
+module_param(cont3_bufsize, uint, S_IRUGO);
 module_param(debug, int, 0644);
+
+MODULE_PARM_DESC(cont2_bufoffset, "Display offset (default 0)");
+MODULE_PARM_DESC(cont2_bufsize, "Display buffer size (default 0)");
+MODULE_PARM_DESC(cont3_bufoffset, "Display offset (default 0)");
+MODULE_PARM_DESC(cont3_bufsize, "Display buffer size (default 0)");
 
 static struct buf_config_params display_buf_config_params = {
 	.min_numbuffers = VPBE_DEFAULT_NUM_BUFS,
@@ -354,6 +367,13 @@ static int vpbe_buffer_setup(struct videobuf_queue *q,
 	if (V4L2_MEMORY_MMAP == layer->memory)
 		if (*size > buf_size)
 			*size = buf_size;
+
+	/* Checking if the buffer size exceeds the available buffer */
+	if (display_buf_config_params.video_limit[layer->device_id]) {
+		while (*size * *count >
+		(display_buf_config_params.video_limit[layer->device_id]))
+			(*count)--;
+	}
 
 	/* Store number of buffers allocated in numbuffer member */
 	if (*count < display_buf_config_params.min_numbuffers)
@@ -1826,6 +1846,12 @@ static int init_vpbe_layer_objects(int i)
 	display_buf_config_params.numbuffers[VPBE_DISPLAY_DEVICE_1] =
 		video3_numbuffers;
 
+	/*set size of buffers, they could come from bootargs*/
+	display_buf_config_params.layer_bufsize[VPBE_DISPLAY_DEVICE_0] =
+		video2_bufsize;
+	display_buf_config_params.layer_bufsize[VPBE_DISPLAY_DEVICE_1] =
+		video3_bufsize;
+
 	if (display_buf_config_params.numbuffers[0] == 0)
 		printk(KERN_ERR "no vid2 buffer allocated\n");
 	if (display_buf_config_params.numbuffers[1] == 0)
@@ -1849,6 +1875,8 @@ static __devinit int vpbe_display_probe(struct platform_device *pdev)
 	struct vpbe_display_obj *vpbe_display_layer = NULL;
 	struct resource *res;
 	int irq;
+	unsigned long phys_end_kernel;
+	size_t size;
 
 	printk(KERN_DEBUG "vpbe_display_probe\n");
 
@@ -1857,6 +1885,51 @@ static __devinit int vpbe_display_probe(struct platform_device *pdev)
 	if (!disp_dev) {
 		printk(KERN_ERR "ran out of memory\n");
 		return -ENOMEM;
+	}
+
+	/*
+	* Initialising the memory from the input arguments file for
+	* contiguous memory buffers and avoid defragmentation
+	*/
+
+	if (cont2_bufsize) {
+		/* attempt to determine the end of Linux kernel memory */
+		phys_end_kernel = virt_to_phys((void *)PAGE_OFFSET) +
+			(num_physpages << PAGE_SHIFT);
+		phys_end_kernel += cont2_bufoffset;
+		size = cont2_bufsize;
+
+		err = dma_declare_coherent_memory(&pdev->dev, phys_end_kernel,
+			phys_end_kernel,
+			size,
+			DMA_MEMORY_MAP |
+			DMA_MEMORY_EXCLUSIVE);
+
+		if (!err) {
+			dev_err(&pdev->dev, "Unable to declare MMAP memory.\n");
+			err = -ENOMEM;
+			goto probe_out;
+		}
+	}
+
+	if (cont3_bufsize) {
+		/* attempt to determine the end of Linux kernel memory */
+		phys_end_kernel = virt_to_phys((void *)PAGE_OFFSET) +
+			(num_physpages << PAGE_SHIFT);
+			phys_end_kernel += cont3_bufoffset;
+			size = cont3_bufsize;
+
+		err = dma_declare_coherent_memory(&pdev->dev, phys_end_kernel,
+			phys_end_kernel,
+			size,
+			DMA_MEMORY_MAP |
+			DMA_MEMORY_EXCLUSIVE);
+
+		if (!err) {
+			dev_err(&pdev->dev, "Unable to declare MMAP memory.\n");
+			err = -ENOMEM;
+			goto probe_out;
+		}
 	}
 
 	/* Allocate memory for four plane display objects */

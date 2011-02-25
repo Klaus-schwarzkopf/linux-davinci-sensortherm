@@ -139,6 +139,7 @@ struct buf_config_params {
 	unsigned char numbuffers[VPBE_DISPLAY_MAX_DEVICES];
 	unsigned int min_bufsize[VPBE_DISPLAY_MAX_DEVICES];
 	unsigned int layer_bufsize[VPBE_DISPLAY_MAX_DEVICES];
+	unsigned int video_limit[VPBE_DISPLAY_MAX_DEVICES];
 };
 
 static int venc_is_second_field(void);
