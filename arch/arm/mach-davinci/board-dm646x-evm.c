@@ -428,6 +428,9 @@ static struct davinci_i2c_platform_data i2c_pdata = {
 #define TVP5147_CH0		"tvp514x-0"
 #define TVP5147_CH1		"tvp514x-1"
 
+#define VPIF_STATUS	(0x002C)
+#define VPIF_STATUS_CLR	(0x0030)
+
 static void __iomem *vpif_vidclkctl_reg;
 static void __iomem *vpif_vsclkdis_reg;
 /* spin lock for updating above registers */
@@ -499,6 +502,21 @@ static struct vpif_subdev_info dm646x_vpif_subdev[] = {
 	},
 };
 
+static int vpif_intr_status(void __iomem *vpif_base, int channel)
+{
+	int status = 0;
+	int mask;
+
+	if (channel < 0 || channel > 3)
+		return 0;
+
+	mask = 1 << channel;
+	status = __raw_readl((vpif_base + VPIF_STATUS)) & mask;
+	__raw_writel(status, (vpif_base + VPIF_STATUS_CLR));
+
+	return status;
+}
+
 static const char *output[] = {
 	"Composite",
 	"Component",
@@ -507,6 +525,7 @@ static const char *output[] = {
 
 static struct vpif_display_config dm646x_vpif_display_config = {
 	.set_clock	= set_vpif_clock,
+	.intr_status	= vpif_intr_status,
 	.subdevinfo	= dm646x_vpif_subdev,
 	.subdev_count	= ARRAY_SIZE(dm646x_vpif_subdev),
 	.output		= output,
@@ -658,6 +677,7 @@ static const struct vpif_input dm6467_ch1_inputs[] = {
 
 static struct vpif_capture_config dm646x_vpif_capture_cfg = {
 	.setup_input_path = setup_vpif_input_path,
+	.intr_status = vpif_intr_status,
 	.setup_input_channel_mode = setup_vpif_input_channel_mode,
 	.subdev_info = vpif_capture_sdev_info,
 	.subdev_count = ARRAY_SIZE(vpif_capture_sdev_info),

@@ -26,6 +26,7 @@
 #include <mach/serial.h>
 #include <mach/common.h>
 #include <mach/asp.h>
+#include <mach/vpif.h>
 
 #include "clock.h"
 #include "mux.h"
@@ -679,12 +680,17 @@ static struct resource vpif_resource[] = {
 	}
 };
 
+static struct vpif_platform_data dm646x_vpif_platform_data = {
+	.clk_enabled = true,
+};
+
 static struct platform_device vpif_dev = {
 	.name		= "vpif",
 	.id		= -1,
 	.dev		= {
 			.dma_mask 		= &vpif_dma_mask,
 			.coherent_dma_mask	= DMA_BIT_MASK(32),
+			.platform_data		= &dm646x_vpif_platform_data,
 	},
 	.resource	= vpif_resource,
 	.num_resources	= ARRAY_SIZE(vpif_resource),

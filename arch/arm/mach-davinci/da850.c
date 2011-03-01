@@ -28,6 +28,7 @@
 #include <mach/cpufreq.h>
 #include <mach/pm.h>
 #include <mach/gpio.h>
+#include <mach/vpif.h>
 
 #include "clock.h"
 #include "mux.h"
@@ -1242,12 +1243,17 @@ static struct resource da850_vpif_resource[] = {
 	}
 };
 
+static struct vpif_platform_data da850_vpif_platform_data = {
+	.clk_enabled = false,
+};
+
 static struct platform_device da850_vpif_dev = {
 	.name		= "vpif",
 	.id		= -1,
 	.dev		= {
 			.dma_mask 		= &da850_vpif_dma_mask,
 			.coherent_dma_mask	= DMA_BIT_MASK(32),
+			.platform_data		= &da850_vpif_platform_data,
 	},
 	.resource	= da850_vpif_resource,
 	.num_resources	= ARRAY_SIZE(da850_vpif_resource),

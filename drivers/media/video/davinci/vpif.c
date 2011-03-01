@@ -26,6 +26,7 @@
 #include <linux/clk.h>
 #include <linux/err.h>
 #include <mach/hardware.h>
+#include <mach/vpif.h>
 
 #include "vpif.h"
 
@@ -242,6 +243,7 @@ EXPORT_SYMBOL(vpif_channel_getfid);
 
 static int __init vpif_probe(struct platform_device *pdev)
 {
+	struct vpif_platform_data *pdata = pdev->dev.platform_data;
 	int status = 0;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -260,12 +262,14 @@ static int __init vpif_probe(struct platform_device *pdev)
 		goto fail;
 	}
 
-	vpif_clk = clk_get(&pdev->dev, "vpif");
-	if (IS_ERR(vpif_clk)) {
-		status = PTR_ERR(vpif_clk);
-		goto clk_fail;
+	if (!pdata->clk_enabled) {
+		vpif_clk = clk_get(&pdev->dev, "vpif");
+		if (IS_ERR(vpif_clk)) {
+			status = PTR_ERR(vpif_clk);
+			goto clk_fail;
+		}
+		clk_enable(vpif_clk);
 	}
-	clk_enable(vpif_clk);
 
 	spin_lock_init(&vpif_lock);
 	dev_info(&pdev->dev, "vpif probe success\n");

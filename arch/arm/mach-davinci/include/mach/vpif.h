@@ -41,6 +41,10 @@ struct vpif_subdev_info {
 	struct vpif_interface vpif_if;
 };
 
+struct vpif_platform_data {
+	bool clk_enabled;
+};
+
 struct vpif_display_config {
 	int (*set_clock)(int, int);
 	int (*intr_status)(void __iomem *vpif_base, int);
