@@ -37,6 +37,7 @@
 #include <linux/slab.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-ioctl.h>
+#include <media/davinci/videohd.h>
 
 #include "vpif_capture.h"
 
@@ -83,6 +84,27 @@ static struct device *vpif_dev;
  * ch_params: video standard configuration parameters for vpif
  */
 static const struct vpif_channel_config_params ch_params[] = {
+	/* MT9T031 raw bayer Camera standars */
+	{
+		"CAMERA", 640, 480, 93, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		1, 0, 0, V4L2_STD_BAYER_640,
+	},
+	{
+		"CAMERA", 1024, 768, 43, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		1, 0, 0, V4L2_STD_BAYER_1024,
+	},
+	{
+		"CAMERA", 1280, 1024, 27, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+		, 1, 0, 0, V4L2_STD_BAYER_1280,
+	},
+	{
+		"CAMERA", 1600, 1200, 20, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+		, 1, 0, 0, V4L2_STD_BAYER_1600,
+	},
+	{
+		"CAMERA", 2048, 1536, 12, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+		, 1, 0, 0, V4L2_STD_BAYER_2048,
+	},
 	{
 		"NTSC_M", 720, 480, 30, 0, 1, 268, 1440, 1, 23, 263, 266,
 		286, 525, 525, 0, 1, 0, V4L2_STD_525_60,
@@ -1697,8 +1719,10 @@ static int vpif_s_fmt_vid_cap(struct file *file, void *priv,
 {
 	struct vpif_fh *fh = priv;
 	struct channel_obj *ch = fh->channel;
+	struct vpif_params *vpifparams = &ch->vpifparams;
 	struct common_obj *common = &ch->common[VPIF_VIDEO_INDEX];
 	struct v4l2_pix_format *pixfmt;
+	struct v4l2_mbus_framefmt mf;
 	int ret = 0;
 
 	vpif_dbg(2, debug, "VIDIOC_S_FMT\n");
@@ -1729,6 +1753,18 @@ static int vpif_s_fmt_vid_cap(struct file *file, void *priv,
 
 	if (ret)
 		return ret;
+
+	if (vpifparams->iface.if_type == VPIF_IF_RAW_BAYER) {
+		mf.width = fmt->fmt.pix.width;
+		mf.height = fmt->fmt.pix.height;
+		ret = v4l2_subdev_call(vpif_obj.sd[ch->curr_sd_index],
+				video, s_mbus_fmt, &mf);
+		if (ret)
+			return ret;
+		pixfmt->pixelformat = V4L2_PIX_FMT_SBGGR8;
+	} else
+		pixfmt->pixelformat = V4L2_PIX_FMT_YUV422P;
+
 	/* store the format in the channel object */
 	if (mutex_lock_interruptible(&common->lock))
 		return -ERESTARTSYS;

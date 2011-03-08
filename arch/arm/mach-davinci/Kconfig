@@ -203,7 +203,7 @@ config DA850_UI_CLCD
 	  NOTE: Please take care while choosing this option, Graphical LCD will
 	  not be functional if Character LCD is selected.
 
-config DA850_UI_VIDEO_PORT
+config DA850_UI_SD_VIDEO_PORT
 	bool "Video Port Interface"
 	help
 	  Say Y if you want to use Video Port Interface (VPIF) on the
@@ -211,6 +211,15 @@ config DA850_UI_VIDEO_PORT
 	  UI daughter card that is supplied with the EVM.
 	  NOTE: Please make sure to disable RMII and CLCD options when you
 	  select Video Port Interface.
+
+config DA850_UI_CAMERA
+	bool "CAMERA"
+	help
+	  Say Y if you want to use camera interface on the DA850/OMAP-L138 EVM.
+	  Camera can be mounted on the UI daughter card.
+	  NOTE: Please make sure to disable RMII, CLCD and VIDEO_PORT options
+	  when you select Video Port Interface.
+
 endchoice
 
 config GPIO_PCA953X
