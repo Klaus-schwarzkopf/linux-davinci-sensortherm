@@ -392,7 +392,8 @@ static int mt9t031_set_params(struct v4l2_subdev *sd,
 	return ret < 0 ? ret : 0;
 }
 
-static int mt9t031_set_fmt(struct v4l2_subdev *sd, struct v4l2_format *f)
+static int mt9t031_s_mbus_fmt(struct v4l2_subdev *sd,
+		struct v4l2_mbus_framefmt *mf)
 {
 	struct mt9t031 *mt9t031 = to_mt9t031(sd);
 	int ret;
@@ -400,8 +401,8 @@ static int mt9t031_set_fmt(struct v4l2_subdev *sd, struct v4l2_format *f)
 	struct v4l2_rect rect = {
 		.left	= mt9t031->x_current,
 		.top	= mt9t031->y_current,
-		.width	= f->fmt.pix.width,
-		.height	= f->fmt.pix.height,
+		.width	= mf->width,
+		.height	= mf->height,
 	};
 
 	/*
@@ -430,22 +431,15 @@ static int mt9t031_set_fmt(struct v4l2_subdev *sd, struct v4l2_format *f)
 	return ret;
 }
 
-static int mt9t031_try_fmt(struct v4l2_subdev *sd, struct v4l2_format *f)
+static int mt9t031_try_mbus_fmt(struct v4l2_subdev *sd,
+		struct v4l2_mbus_framefmt *mf)
 {
-	struct v4l2_pix_format *pix = &f->fmt.pix;
+	v4l_bound_align_image(
+		&mf->width, MT9T031_MIN_WIDTH, MT9T031_MAX_WIDTH, 1,
+		&mf->height, MT9T031_MIN_HEIGHT, MT9T031_MAX_HEIGHT, 1, 0);
 
-	if (pix->height < MT9T031_MIN_HEIGHT)
-		pix->height = MT9T031_MIN_HEIGHT;
-	if (pix->height > MT9T031_MAX_HEIGHT)
-		pix->height = MT9T031_MAX_HEIGHT;
-	if (pix->width < MT9T031_MIN_WIDTH)
-		pix->width = MT9T031_MIN_WIDTH;
-	if (pix->width > MT9T031_MAX_WIDTH)
-		pix->width = MT9T031_MAX_WIDTH;
-
-	pix->width &= ~0x01; /* has to be even */
-	pix->height &= ~0x01; /* has to be even */
-
+	mf->code	= V4L2_MBUS_FMT_SBGGR10_1X10;
+	mf->colorspace	= V4L2_COLORSPACE_SRGB;
 	return 0;
 }
 
@@ -724,8 +718,8 @@ static const struct v4l2_subdev_core_ops mt9t031_core_ops = {
 };
 
 static const struct v4l2_subdev_video_ops mt9t031_video_ops = {
-	.s_mbus_fmt = mt9t031_set_fmt,
-	.try_mbus_fmt = mt9t031_try_fmt,
+	.s_mbus_fmt = mt9t031_s_mbus_fmt,
+	.try_mbus_fmt = mt9t031_try_mbus_fmt,
 	.s_stream = mt9t031_s_stream,
 };
 
