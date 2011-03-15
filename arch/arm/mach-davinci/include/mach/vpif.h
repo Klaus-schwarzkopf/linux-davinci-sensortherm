@@ -53,6 +53,8 @@ struct vpif_display_config {
 	const char **output;
 	int output_count;
 	const char *card_name;
+	bool ch2_clip_en;
+	bool ch3_clip_en;
 };
 
 struct vpif_input {
