@@ -813,7 +813,7 @@ static int vpif_reqbufs(struct file *file, void *priv,
 
 	/* Initialize videobuf queue as per the buffer type */
 	videobuf_queue_dma_contig_init(&common->buffer_queue,
-					    &video_qops, NULL,
+					    &video_qops, &(ch->video_dev->dev),
 					    &common->irqlock,
 					    reqbuf->type, field,
 					    sizeof(struct videobuf_buffer), fh,
@@ -1498,6 +1498,7 @@ static __init int vpif_probe(struct platform_device *pdev)
 						NULL, 0);
 		if (!vpif_obj.sd[i]) {
 			vpif_err("Error registering v4l2 subdevice\n");
+			err = -ENODEV;
 			goto probe_subdev_out;
 		}
 
@@ -1520,7 +1521,7 @@ vpif_int_err:
 	v4l2_device_unregister(&vpif_obj.v4l2_dev);
 	vpif_err("VPIF IRQ request failed\n");
 	for (q = 0; q < res_end; q++) {
-		res = platform_get_resource(pdev, IORESOURCE_IRQ, k);
+		res = platform_get_resource(pdev, IORESOURCE_IRQ, q);
 		if (NULL != res) {
 			free_irq(res->start,
 					(void *)(&vpif_obj.dev[q]->channel_id));
