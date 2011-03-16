@@ -59,6 +59,7 @@ extern unsigned int da850_max_speed;
 #define DA8XX_SYSCFG1_BASE	(IO_PHYS + 0x22C000)
 #define DA8XX_SYSCFG1_VIRT(x)	(da8xx_syscfg1_base + (x))
 #define DA8XX_DEEPSLEEP_REG	0x8
+#define DA8XX_PWRDN_REG		0x18
 
 #define DA8XX_PSC0_BASE		0x01c10000
 #define DA8XX_PLL0_BASE		0x01c11000
@@ -67,6 +68,7 @@ extern unsigned int da850_max_speed;
 #define DA8XX_GPIO_BASE		0x01e26000
 #define DA8XX_PSC1_BASE		0x01e27000
 #define DA8XX_LCD_CNTRL_BASE	0x01e13000
+#define DA850_SATA_BASE		0x01e18000
 #define DA8XX_PLL1_BASE		0x01e1a000
 #define DA8XX_MMCSD0_BASE	0x01c40000
 #define DA8XX_AEMIF_CS2_BASE	0x60000000
@@ -102,6 +104,7 @@ int __init da850_register_vpif_display(struct vpif_display_config
 							*display_config);
 int __init da850_register_vpif_capture(struct vpif_capture_config
 							*capture_config);
+int __init da850_register_sata(unsigned long refclkpn);
 
 extern struct platform_device da8xx_serial_device;
 extern struct emac_platform_data da8xx_emac_pdata;
