@@ -1583,6 +1583,8 @@ static struct vpif_display_config da850_vpif_display_config = {
 #define HAS_VPIF_CAPTURE 0
 #endif
 
+#define DA850EVM_SATA_REFCLKPN_RATE	(100 * 1000 * 1000)
+
 static __init void da850_evm_init(void)
 {
 	int ret;
@@ -1609,6 +1611,11 @@ static __init void da850_evm_init(void)
 	if (ret)
 		pr_warning("da850_evm_init: UART 1 mux setup failed:"
 						" %d\n", ret);
+
+	ret = da850_register_sata(DA850EVM_SATA_REFCLKPN_RATE);
+	if (ret)
+		pr_warning("da850_evm_init: sata registration failed: %d\n",
+				ret);
 
 	if (HAS_MMC) {
 		ret = davinci_cfg_reg_list(da850_mmcsd0_pins);
