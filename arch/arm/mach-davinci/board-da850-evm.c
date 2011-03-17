@@ -32,6 +32,7 @@
 #include <linux/spi/flash.h>
 #include <linux/delay.h>
 #include <linux/i2c-gpio.h>
+#include <linux/pwm_backlight.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -58,6 +59,28 @@
 #define DA850_MII_MDIO_CLKEN_PIN	GPIO_TO_PIN(2, 6)
 
 #define DA850_SD_ENABLE_PIN		GPIO_TO_PIN(0, 11)
+
+#define DAVINCI_BACKLIGHT_MAX_BRIGHTNESS	250
+#define DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS	250
+#define DAVINCI_PWM_PERIOD_NANO_SECONDS		(10000 * 10)
+
+#define PWM_DEVICE_ID	"ehrpwm.1"
+
+static struct platform_pwm_backlight_data da850evm_backlight_data = {
+	.pwm_id		= PWM_DEVICE_ID,
+	.ch		= 0,
+	.max_brightness	= DAVINCI_BACKLIGHT_MAX_BRIGHTNESS,
+	.dft_brightness	= DAVINVI_BACKLIGHT_DEFAULT_BRIGHTNESS,
+	.pwm_period_ns	= DAVINCI_PWM_PERIOD_NANO_SECONDS,
+};
+
+static struct platform_device da850evm_backlight = {
+	.name		= "pwm-backlight",
+	.id		= -1,
+	.dev		= {
+		.platform_data	= &da850evm_backlight_data,
+	}
+};
 
 static struct davinci_spi_platform_data da850evm_spi1_pdata = {
 	.version	= SPI_VERSION_2,
@@ -1840,6 +1863,12 @@ static __init void da850_evm_init(void)
 	}
 
 	da850_register_ehrpwm(mask);
+
+	ret = platform_device_register(&da850evm_backlight);
+	if (ret)
+		pr_warning("da850_evm_init: backlight device registration"
+				" failed: %d\n", ret);
+
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
