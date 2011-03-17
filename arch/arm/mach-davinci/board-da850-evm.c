@@ -522,9 +522,9 @@ static void da850_evm_ui_keys_init(unsigned gpio)
 #ifdef CONFIG_DA850_UI_CLCD
 static inline void da850_evm_setup_char_lcd(int a, int b, int c)
 {
-	gpio_set_value(a, 0);
-	gpio_set_value(b, 0);
-	gpio_set_value(c, 0);
+	gpio_set_value_cansleep(a, 0);
+	gpio_set_value_cansleep(b, 0);
+	gpio_set_value_cansleep(c, 0);
 }
 #else
 static inline void da850_evm_setup_char_lcd(int a, int b, int c) { }
@@ -541,7 +541,7 @@ static struct at24_platform_data da850_evm_i2c_eeprom_info = {
 #ifdef CONFIG_DA850_UI_SD_VIDEO_PORT
 static inline void da850_evm_setup_video_port(int video_sel)
 {
-	gpio_set_value(video_sel, 0);
+	gpio_set_value_cansleep(video_sel, 0);
 }
 #else
 static inline void da850_evm_setup_video_port(int video_sel) { }
@@ -550,7 +550,7 @@ static inline void da850_evm_setup_video_port(int video_sel) { }
 #ifdef CONFIG_DA850_UI_CAMERA
 static inline void da850_evm_setup_camera(int camera_sel)
 {
-	gpio_set_value(camera_sel, 0);
+	gpio_set_value_cansleep(camera_sel, 0);
 }
 #else
 static inline void da850_evm_setup_camera(int camera_sel) { }
