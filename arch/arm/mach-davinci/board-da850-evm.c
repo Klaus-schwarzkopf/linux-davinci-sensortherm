@@ -1381,12 +1381,14 @@ static int da850_vpif_intr_status(void __iomem *vpif_base, int channel)
 	return status;
 }
 
+#if defined(CONFIG_DA850_UI_SD_VIDEO_PORT)
 /* VPIF capture configuration */
 static struct tvp514x_platform_data tvp5146_pdata = {
 	.clk_polarity = 0,
 	.hs_polarity = 1,
 	.vs_polarity = 1
 };
+#endif
 
 #define TVP514X_STD_ALL (V4L2_STD_NTSC | V4L2_STD_PAL)
 
