@@ -150,7 +150,7 @@ static int vpif_buffer_prepare(struct videobuf_queue *q,
 	if (VIDEOBUF_NEEDS_INIT == vb->state) {
 		vb->width = common->width;
 		vb->height = common->height;
-		vb->size = vb->width * vb->height;
+		vb->size = common->fmt.fmt.pix.sizeimage;
 		vb->field = field;
 
 		ret = videobuf_iolock(q, vb, NULL);
@@ -638,10 +638,7 @@ static int vpif_check_format(struct channel_obj *ch,
 		goto exit;
 	}
 
-	if (V4L2_MEMORY_USERPTR == common->memory)
-		sizeimage = pixfmt->sizeimage;
-	else
-		sizeimage = config_params.channel_bufsize[ch->channel_id];
+	sizeimage = pixfmt->sizeimage;
 
 	vpitch = sizeimage / (hpitch * 2);
 
