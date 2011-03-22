@@ -107,6 +107,7 @@ int __init da850_register_vpif_capture(struct vpif_capture_config
 							*capture_config);
 int __init da850_register_sata(unsigned long refclkpn);
 void __init da850_register_ehrpwm(char);
+int __init da850_register_ecap(char);
 
 extern struct platform_device da8xx_serial_device;
 extern struct emac_platform_data da8xx_emac_pdata;
