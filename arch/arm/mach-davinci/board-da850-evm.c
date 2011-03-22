@@ -1585,10 +1585,25 @@ static struct vpif_display_config da850_vpif_display_config = {
 
 #define DA850EVM_SATA_REFCLKPN_RATE	(100 * 1000 * 1000)
 
+#if defined(CONFIG_SPI_DAVINCI)
+#define HAS_SPI 1
+#else
+#define HAS_SPI 0
+#endif
+
+#if defined(CONFIG_FB_DA8XX)
+#define HAS_LCD	1
+#else
+#define HAS_LCD	0
+#endif
+
 static __init void da850_evm_init(void)
 {
 	int ret;
+	char mask = 0;
+	struct davinci_soc_info *soc_info = &davinci_soc_info;
 
+	u8 rmii_en = soc_info->emac_pdata->rmii_en;
 	ret = da850_register_edma(da850_edma_rsv);
 	if (ret)
 		pr_warning("da850_evm_init: edma registration failed: %d\n",
@@ -1786,6 +1801,45 @@ static __init void da850_evm_init(void)
 					"%d\n",	ret);
 
 	}
+
+	if (rmii_en) {
+		ret = davinci_cfg_reg_list(da850_ehrpwm0_pins);
+		if (ret)
+			pr_warning("da850_evm_init: ehrpwm0 mux setup failed:"
+			       "%d\n",	ret);
+		else
+			mask = BIT(0) | BIT(1);
+	} else {
+		pr_warning("da850_evm_init: eHRPWM module 0 cannot be used"
+			" since it is being used by MII interface\n");
+		mask = 0;
+	}
+
+	if (!HAS_LCD) {
+		ret = davinci_cfg_reg_list(da850_ehrpwm1_pins);
+		if (ret)
+			pr_warning("da850_evm_init: eHRPWM module1 output A mux"
+			" setup failed %d\n", ret);
+		else
+			mask = mask | BIT(2);
+	} else {
+		pr_warning("da850_evm_init: eHRPWM module1 outputA cannot be"
+			" used since it is being used by LCD\n");
+	}
+
+	if (!HAS_SPI) {
+		ret = davinci_cfg_reg(DA850_EHRPWM1_B);
+		if (ret)
+			pr_warning("da850_evm_init: eHRPWM module1 outputB mux"
+				" setup failed %d\n", ret);
+		else
+			mask =  mask  | BIT(3);
+	} else {
+		pr_warning("da850_evm_init: eHRPWM module1 outputB cannot be"
+			" used since it is being used by spi1\n");
+	}
+
+	da850_register_ehrpwm(mask);
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
