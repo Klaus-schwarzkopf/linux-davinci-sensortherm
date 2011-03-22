@@ -53,6 +53,7 @@ extern unsigned int da850_max_speed;
 #define DA8XX_JTAG_ID_REG	0x18
 #define DA8XX_MSTPRI2_REG	0x118
 #define DA8XX_CFGCHIP0_REG	0x17c
+#define DA8XX_CFGCHIP1_REG      0x180
 #define DA8XX_CFGCHIP2_REG	0x184
 #define DA8XX_CFGCHIP3_REG	0x188
 
@@ -105,6 +106,7 @@ int __init da850_register_vpif_display(struct vpif_display_config
 int __init da850_register_vpif_capture(struct vpif_capture_config
 							*capture_config);
 int __init da850_register_sata(unsigned long refclkpn);
+void __init da850_register_ehrpwm(char);
 
 extern struct platform_device da8xx_serial_device;
 extern struct emac_platform_data da8xx_emac_pdata;
@@ -152,4 +154,6 @@ extern const short da850_mcbsp0_pins[];
 extern const short da850_mcbsp1_pins[];
 extern const short da850_vpif_capture_pins[];
 extern const short da850_vpif_display_pins[];
+extern const short da850_ehrpwm0_pins[];
+extern const short da850_ehrpwm1_pins[];
 #endif /* __ASM_ARCH_DAVINCI_DA8XX_H */

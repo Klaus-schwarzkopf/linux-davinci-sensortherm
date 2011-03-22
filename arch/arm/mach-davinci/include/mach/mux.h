@@ -980,6 +980,16 @@ enum davinci_da850_index {
 	DA850_VPIF_DOUT15,
 	DA850_VPIF_CLKO2,
 	DA850_VPIF_CLKO3,
+
+	/* eHRPWM0 function */
+	DA850_EHRPWM0_A,
+	DA850_EHRPWM0_B,
+	DA850_EHRPWM0_TZ,
+
+	/* eHRPWM1 function */
+	DA850_EHRPWM1_A,
+	DA850_EHRPWM1_B,
+	DA850_EHRPWM1_TZ,
 };
 
 enum davinci_tnetv107x_index {
