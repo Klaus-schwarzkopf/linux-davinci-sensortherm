@@ -1727,7 +1727,8 @@ static __init void da850_evm_init(void)
 		if ((HAS_MCBSP0 || HAS_MCBSP1))
 			pr_warning("WARNING: both McASP and McBSP are enabled, "
 					"but they share pins.\n"
-					"\tDisable one of them.\n");
+					"\tOnly McASP will work. If you want "
+					"McBSP support, disable McASP.\n");
 		if (HAS_UART1_AFE)
 			pr_warning("WARNING: both McASP and UART1_AFE are "
 				"enabled, but they share pins.\n"
