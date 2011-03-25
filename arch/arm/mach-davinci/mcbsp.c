@@ -33,6 +33,7 @@
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/err.h>
+#include <linux/slab.h>
 
 #include <mach/memory.h>
 #include <mach/hardware.h>
