@@ -405,6 +405,20 @@ static struct clk ecap_clk = {
 	.flags          = DA850_CLK_ASYNC3,
 };
 
+static struct clk usb11_clk = {
+	.name		= "usb11",
+	.parent		= &pll0_sysclk4,
+	.lpsc		= DA8XX_LPSC1_USB11,
+	.gpsc		= 1,
+};
+
+static struct clk usb20_clk = {
+	.name		= "usb20",
+	.parent		= &pll0_sysclk2,
+	.lpsc		= DA8XX_LPSC1_USB20,
+	.gpsc		= 1,
+};
+
 static struct clk_lookup da850_clks[] = {
 	CLK(NULL,		"ref",		&ref_clk),
 	CLK(NULL,		"pll0",		&pll0_clk),
@@ -455,6 +469,8 @@ static struct clk_lookup da850_clks[] = {
 	CLK(NULL,		"vpif",		&vpif_clk),
 	CLK(NULL,		"ehrpwm",	&ehrpwm_clk),
 	CLK(NULL,		"ecap",		&ecap_clk),
+	CLK(NULL,               "usb11",        &usb11_clk),
+	CLK(NULL,               "usb20",        &usb20_clk),
 	CLK(NULL,		NULL,		NULL),
 };
 
