@@ -19,6 +19,10 @@
 #include <mach/asp.h>
 #include <mach/keyscan.h>
 #include <media/davinci/vpfe_capture.h>
+#include <media/davinci/vpbe_types.h>
+#include <media/davinci/vpbe.h>
+#include <media/davinci/vpss.h>
+#include <media/davinci/vpbe_osd.h>
 
 #define DM365_EMAC_BASE			(0x01D07000)
 #define DM365_EMAC_MDIO_BASE		(DM365_EMAC_BASE + 0x4000)
@@ -49,4 +53,5 @@ void dm365_init_spi0(unsigned chipselect_mask,
 			struct spi_board_info *info, unsigned len);
 
 void dm365_set_vpfe_config(struct vpfe_config *cfg);
+void dm365_set_vpbe_display_config(struct vpbe_display_config *cfg);
 #endif /* __ASM_ARCH_DM365_H */

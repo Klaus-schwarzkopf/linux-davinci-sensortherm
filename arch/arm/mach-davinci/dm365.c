@@ -1127,31 +1127,35 @@ void __init dm365_init_rtc(void)
 void __init dm365_init(void)
 {
 	davinci_common_init(&davinci_soc_info_dm365);
+	davinci_sysmodbase = ioremap_nocache(DAVINCI_SYSTEM_MODULE_BASE, 0x800);
+	WARN_ON(!davinci_sysmodbase);
 }
+
+#define DM365_ISP5_REG_BASE		0x01C70000
 
 static struct resource dm365_vpss_resources[] = {
 	{
 		/* VPSS ISP5 Base address */
-		.name           = "isp5",
-		.start          = 0x01c70000,
-		.end            = 0x01c70000 + 0xff,
-		.flags          = IORESOURCE_MEM,
+		.name		= "isp5",
+		.start		= DM365_ISP5_REG_BASE,
+		.end		= DM365_ISP5_REG_BASE + 0xff,
+		.flags		= IORESOURCE_MEM,
 	},
 	{
 		/* VPSS CLK Base address */
-		.name           = "vpss",
-		.start          = 0x01c70200,
-		.end            = 0x01c70200 + 0xff,
-		.flags          = IORESOURCE_MEM,
+		.name		= "vpss",
+		.start		= 0x01c70200,
+		.end		= 0x01c70200 + 0xff,
+		.flags		= IORESOURCE_MEM,
 	},
 };
 
 static struct platform_device dm365_vpss_device = {
-       .name                   = "vpss",
-       .id                     = -1,
-       .dev.platform_data      = "dm365_vpss",
-       .num_resources          = ARRAY_SIZE(dm365_vpss_resources),
-       .resource               = dm365_vpss_resources,
+	.name			= "vpss",
+	.id			= -1,
+	.dev.platform_data	= "dm365_vpss",
+	.num_resources		= ARRAY_SIZE(dm365_vpss_resources),
+	.resource		= dm365_vpss_resources,
 };
 
 static struct resource vpfe_resources[] = {
@@ -1220,6 +1224,258 @@ static struct platform_device dm365_isif_dev = {
 	},
 };
 
+void dm365_set_vpfe_config(struct vpfe_config *cfg)
+{
+	vpfe_capture_dev.dev.platform_data = cfg;
+}
+
+#define DM365_OSD_REG_BASE		0x01C71C00
+
+static struct resource dm365_osd_resources[] = {
+	{
+	.start	= DM365_OSD_REG_BASE,
+	.end	= DM365_OSD_REG_BASE + 0x100,
+	.flags	= IORESOURCE_MEM,
+	},
+};
+
+static u64 dm365_video_dma_mask = DMA_BIT_MASK(32);
+
+static struct osd_platform_data dm365_osd_data = {
+	.vpbe_type	= DM365_VPBE,
+};
+
+static struct platform_device dm365_osd_dev = {
+	.name		= VPBE_OSD_SUBDEV_NAME,
+	.id		= -1,
+	.num_resources	= ARRAY_SIZE(dm365_osd_resources),
+	.resource	= dm365_osd_resources,
+	.dev		= {
+		.dma_mask		= &dm365_video_dma_mask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
+		.platform_data		= &dm365_osd_data,
+	},
+};
+
+#define DM365_VENC_REG_BASE		0x01C71E00
+#define DM3XX_VDAC_CONFIG		0x01C4002C
+
+static struct resource dm365_venc_resources[] = {
+	{
+		.start	= IRQ_VENCINT,
+		.end	= IRQ_VENCINT,
+		.flags	= IORESOURCE_IRQ,
+	},
+	/* venc registers io space */
+	{
+		.start	= DM365_VENC_REG_BASE,
+		.end	= DM365_VENC_REG_BASE + 0x180,
+		.flags	= IORESOURCE_MEM,
+	},
+	/* vdaccfg registers io space */
+	{
+		.start	= DM3XX_VDAC_CONFIG,
+		.end	= DM3XX_VDAC_CONFIG + 4,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct resource dm365_v4l2_resources[] = {
+	{
+		.start	= IRQ_VENCINT,
+		.end	= IRQ_VENCINT,
+		.flags	= IORESOURCE_IRQ,
+	},
+	/* venc registers io space */
+	{
+		.start	= DM365_VENC_REG_BASE,
+		.end	= DM365_VENC_REG_BASE + 0x180,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+
+static inline u32 dm365_reg_modify(void *reg, u32 val, u32 mask)
+{
+	u32 new_val = (__raw_readl(reg) & ~mask) | (val & mask);
+	__raw_writel(new_val, reg);
+	return new_val;
+}
+
+static void __iomem *venc_vmod_reg;
+static void __iomem *venc_ycctl_reg;
+
+static int dm365_set_if_config(enum v4l2_mbus_pixelcode pixcode)
+{
+	unsigned int val = 0;
+	int ret = 0;
+	switch (pixcode) {
+	case V4L2_MBUS_FMT_FIXED:
+		/* Analog out.do nothing */
+		break;
+	case V4L2_MBUS_FMT_YUYV8_2X8:
+		/* BT656 */
+		val = (1<<12);
+		/* set VDMD in VMOD */
+		dm365_reg_modify(venc_vmod_reg, val, (7 << 12));
+		/* Set YCCTL */
+		dm365_reg_modify(venc_ycctl_reg, 1, 1);
+		break;
+	case V4L2_MBUS_FMT_YUYV10_1X20:
+		/*
+		 * This was VPBE_DIGITAL_IF_YCC16.BT656. Replace
+		 * the enum accordingly when the right one gets
+		 * into open source
+		 */
+		val = 0 << 12;
+		dm365_reg_modify(venc_vmod_reg, val, (7 << 12));
+		dm365_reg_modify(venc_ycctl_reg, 1, 1);
+		break;
+	case V4L2_MBUS_FMT_SGRBG8_1X8:
+		/*
+		 * This was VPBE_DIGITAL_IF_PRGB/SRGB. Replace
+		 * the enum accordingly when the right one gets
+		 * into open source
+		 */
+		val = 2 << 12;
+		dm365_reg_modify(venc_vmod_reg, val, (7 << 12));
+		break;
+	default:
+		ret = -EINVAL;
+		break;
+	}
+	return ret;
+}
+
+static int dm365_vpbe_setup_pinmux(enum v4l2_mbus_pixelcode if_type,
+			    int field)
+{
+	int ret = 0;
+
+	switch (if_type) {
+	case V4L2_MBUS_FMT_SGRBG8_1X8:
+		davinci_cfg_reg(DM365_VOUT_FIELD_G81);
+		davinci_cfg_reg(DM365_VOUT_COUTL_EN);
+		davinci_cfg_reg(DM365_VOUT_COUTH_EN);
+		break;
+	case V4L2_MBUS_FMT_YUYV10_1X20:
+		if (field)
+			davinci_cfg_reg(DM365_VOUT_FIELD);
+		else
+			davinci_cfg_reg(DM365_VOUT_FIELD_G81);
+		davinci_cfg_reg(DM365_VOUT_COUTL_EN);
+		davinci_cfg_reg(DM365_VOUT_COUTH_EN);
+		break;
+	default:
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+static void __iomem *vpss_clkctl_reg;
+
+static int dm365_venc_setup_clock(enum vpbe_enc_timings_type type, __u64 mode)
+{
+	int ret = 0;
+
+	switch (type) {
+	case VPBE_ENC_STD:
+		vpss_enable_clock(VPSS_VENC_CLOCK_SEL, 1);
+		vpss_enable_clock(VPSS_VPBE_CLOCK, 1);
+		__raw_writel(0x18, vpss_clkctl_reg);
+		break;
+	case VPBE_ENC_DV_PRESET:
+		switch ((unsigned int)mode) {
+		case V4L2_DV_720P60:
+		case V4L2_DV_1080I60:
+		case V4L2_DV_1080P30:
+		case V4L2_DV_1080I30:
+			/* set sysclk4 to output 74.25 MHz from pll1 */
+			__raw_writel(0x38, vpss_clkctl_reg);
+			break;
+		/* For LCD and EDTV cases */
+		case V4L2_DV_480P59_94:
+		case V4L2_DV_576P50:
+		vpss_enable_clock(VPSS_VENC_CLOCK_SEL, 1);
+			vpss_enable_clock(VPSS_VPBE_CLOCK, 1);
+			__raw_writel(0x18, vpss_clkctl_reg);
+			break;
+		default:
+			ret  = -EINVAL;
+		}
+		break;
+	default:
+		ret = -EINVAL;
+	}
+	return ret;
+}
+
+static struct platform_device dm365_vpbe_v4l2_display = {
+	.name		= "vpbe-v4l2",
+	.id		= -1,
+	.num_resources  = ARRAY_SIZE(dm365_v4l2_resources),
+	.resource	= dm365_v4l2_resources,
+	.dev		= {
+		.dma_mask		= &dm365_video_dma_mask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
+	},
+};
+
+struct venc_platform_data dm365_venc_pdata = {
+	.venc_type		= DM365_VPBE,
+	.setup_pinmux		= dm365_vpbe_setup_pinmux,
+	.setup_clock		= dm365_venc_setup_clock,
+	.setup_if_config	= dm365_set_if_config,
+};
+
+static struct platform_device dm365_venc_dev = {
+	.name		= VPBE_VENC_SUBDEV_NAME,
+	.id		= -1,
+	.num_resources	= ARRAY_SIZE(dm365_venc_resources),
+	.resource	= dm365_venc_resources,
+	.dev		= {
+		.dma_mask		= &dm365_video_dma_mask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
+		.platform_data		= (void *)&dm365_venc_pdata,
+	},
+};
+
+static struct platform_device dm365_vpbe_dev = {
+	.name		= "vpbe_controller",
+	.id		= -1,
+	.dev		= {
+		.dma_mask		= &dm365_video_dma_mask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
+	},
+};
+
+void dm365_set_vpbe_display_config(struct vpbe_display_config *cfg)
+{
+	dm365_vpbe_dev.dev.platform_data = cfg;
+}
+
+static struct platform_device *dm365_video_devices[] __initdata = {
+	&dm365_vpss_device,
+	&dm365_isif_dev,
+	&vpfe_capture_dev,
+	&dm365_osd_dev,
+	&dm365_venc_dev,
+	&dm365_vpbe_dev,
+	&dm365_vpbe_v4l2_display,
+};
+
+static int __init dm365_init_video(void)
+{
+	/* Add isif clock alias */
+	clk_add_alias("master", dm365_isif_dev.name, "vpss_master", NULL);
+	vpss_clkctl_reg = DAVINCI_SYSMODULE_VIRT(0x44);
+	venc_vmod_reg = DAVINCI_SYSMODULE_VIRT(0x32400);
+	platform_add_devices(dm365_video_devices,
+			     ARRAY_SIZE(dm365_video_devices));
+	return 0;
+}
+
 static int __init dm365_init_devices(void)
 {
 	if (!cpu_is_davinci_dm365())
@@ -1233,16 +1489,7 @@ static int __init dm365_init_devices(void)
 	clk_add_alias(NULL, dev_name(&dm365_mdio_device.dev),
 		      NULL, &dm365_emac_device.dev);
 
-	/* Add isif clock alias */
-	clk_add_alias("master", dm365_isif_dev.name, "vpss_master", NULL);
-	platform_device_register(&dm365_vpss_device);
-	platform_device_register(&dm365_isif_dev);
-	platform_device_register(&vpfe_capture_dev);
+	dm365_init_video();
 	return 0;
 }
 postcore_initcall(dm365_init_devices);
-
-void dm365_set_vpfe_config(struct vpfe_config *cfg)
-{
-       vpfe_capture_dev.dev.platform_data = cfg;
-}
