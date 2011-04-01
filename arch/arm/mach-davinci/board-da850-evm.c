@@ -22,6 +22,7 @@
 #include <linux/gpio.h>
 #include <linux/gpio_keys.h>
 #include <linux/platform_device.h>
+#include <linux/interrupt.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/partitions.h>
@@ -44,6 +45,7 @@
 #include <mach/aemif.h>
 #include <mach/spi.h>
 #include <mach/flash.h>
+#include <mach/usb.h>
 #include <mach/vpif.h>
 #include <media/davinci/videohd.h>
 
@@ -849,6 +851,127 @@ static struct pca953x_platform_data da850_evm_bb_expander_info = {
 	.teardown	= da850_evm_bb_expander_teardown,
 	.names		= da850_evm_bb_exp,
 };
+
+/*
+ * USB1 VBUS is controlled by GPIO2[4], over-current is reported on GPIO6[13].
+ */
+#define ON_BD_USB_DRV	GPIO_TO_PIN(2, 4)
+#define ON_BD_USB_OVC	GPIO_TO_PIN(6, 13)
+
+static const short da850_evm_usb11_pins[] = {
+	DA850_GPIO2_4, DA850_GPIO6_13,
+	-1
+};
+
+static da8xx_ocic_handler_t da850_evm_usb_ocic_handler;
+
+static int da850_evm_usb_set_power(unsigned port, int on)
+{
+	gpio_set_value(ON_BD_USB_DRV, on);
+	return 0;
+}
+
+static int da850_evm_usb_get_power(unsigned port)
+{
+	return gpio_get_value(ON_BD_USB_DRV);
+}
+
+static int da850_evm_usb_get_oci(unsigned port)
+{
+	return !gpio_get_value(ON_BD_USB_OVC);
+}
+
+static irqreturn_t da850_evm_usb_ocic_irq(int, void *);
+
+static int da850_evm_usb_ocic_notify(da8xx_ocic_handler_t handler)
+{
+	int irq		= gpio_to_irq(ON_BD_USB_OVC);
+	int error	= 0;
+
+	if (handler != NULL) {
+		da850_evm_usb_ocic_handler = handler;
+
+		error = request_irq(irq, da850_evm_usb_ocic_irq, IRQF_DISABLED |
+				    IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
+				    "OHCI over-current indicator", NULL);
+		if (error)
+			printk(KERN_ERR "%s: could not request IRQ to watch "
+			       "over-current indicator changes\n", __func__);
+	} else
+		free_irq(irq, NULL);
+
+	return error;
+}
+
+static struct da8xx_ohci_root_hub da850_evm_usb11_pdata = {
+	.set_power	= da850_evm_usb_set_power,
+	.get_power	= da850_evm_usb_get_power,
+	.get_oci	= da850_evm_usb_get_oci,
+	.ocic_notify	= da850_evm_usb_ocic_notify,
+
+	/* TPS2065 switch @ 5V */
+	.potpgt		= (3 + 1) / 2,	/* 3 ms max */
+};
+
+static irqreturn_t da850_evm_usb_ocic_irq(int irq, void *dev_id)
+{
+	da850_evm_usb_ocic_handler(&da850_evm_usb11_pdata, 1);
+	return IRQ_HANDLED;
+}
+
+static __init void da850_evm_usb_init(void)
+{
+	u32 cfgchip2;
+	int ret;
+
+	/*
+	 * Set up USB clock/mode in the CFGCHIP2 register.
+	 * FYI:  CFGCHIP2 is 0x0000ef00 initially.
+	 */
+	cfgchip2 = __raw_readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+
+	/* USB2.0 PHY reference clock is 24 MHz */
+	cfgchip2 &= ~CFGCHIP2_REFFREQ;
+	cfgchip2 |=  CFGCHIP2_REFFREQ_24MHZ;
+
+	/*
+	 * Select internal reference clock for USB 2.0 PHY
+	 * and use it as a clock source for USB 1.1 PHY
+	 * (this is the default setting anyway).
+	 */
+	cfgchip2 &= ~CFGCHIP2_USB1PHYCLKMUX;
+	cfgchip2 |=  CFGCHIP2_USB2PHYCLKMUX;
+
+	__raw_writel(cfgchip2, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+
+	ret = davinci_cfg_reg_list(da850_evm_usb11_pins);
+	if (ret) {
+		pr_warning("%s: USB 1.1 PinMux setup failed: %d\n",
+			   __func__, ret);
+		return;
+	}
+
+	ret = gpio_request(ON_BD_USB_DRV, "ON_BD_USB_DRV");
+	if (ret) {
+		printk(KERN_ERR "%s: failed to request GPIO for USB 1.1 port "
+		       "power control: %d\n", __func__, ret);
+		return;
+	}
+	gpio_direction_output(ON_BD_USB_DRV, 0);
+
+	ret = gpio_request(ON_BD_USB_OVC, "ON_BD_USB_OVC");
+	if (ret) {
+		printk(KERN_ERR "%s: failed to request GPIO for USB 1.1 port "
+		       "over-current indicator: %d\n", __func__, ret);
+		return;
+	}
+	gpio_direction_input(ON_BD_USB_OVC);
+
+	ret = da8xx_register_usb11(&da850_evm_usb11_pdata);
+	if (ret)
+		pr_warning("%s: USB 1.1 registration failed: %d\n",
+			   __func__, ret);
+}
 
 static struct davinci_uart_config da850_evm_uart_config __initdata = {
 	.enabled_uarts = 0x7,
@@ -1879,7 +2002,8 @@ static __init void da850_evm_init(void)
 		pr_warning("da850_evm_init: eCAP registration failed: %d\n",
 			       ret);
 
-
+	/* initilaize usb module */
+	da850_evm_usb_init();
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
