@@ -911,6 +911,7 @@ enum davinci_da850_index {
 	DA850_NEMA_CS_2,
 
 	/* GPIO function */
+	DA850_GPIO2_4,
 	DA850_GPIO2_6,
 	DA850_GPIO2_8,
 	DA850_GPIO2_15,
@@ -919,6 +920,7 @@ enum davinci_da850_index {
 	DA850_GPIO1_4,
 	DA850_GPIO1_5,
 	DA850_GPIO0_11,
+	DA850_GPIO6_13,
 	DA850_RTC_ALARM,
 	DA850_GPIO7_4,
 
