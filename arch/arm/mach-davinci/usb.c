@@ -105,10 +105,12 @@ static struct resource da8xx_usb20_resources[] = {
 		.start		= DA8XX_USB0_BASE,
 		.end		= DA8XX_USB0_BASE + SZ_64K - 1,
 		.flags		= IORESOURCE_MEM,
+		.name		= "mc",
 	},
 	{
 		.start		= IRQ_DA8XX_USB_INT,
 		.flags		= IORESOURCE_IRQ,
+		.name		= "mc",
 	},
 };
 
