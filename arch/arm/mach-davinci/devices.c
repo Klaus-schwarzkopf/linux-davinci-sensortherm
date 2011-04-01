@@ -33,6 +33,8 @@
 #define DM365_MMCSD0_BASE	     0x01D11000
 #define DM365_MMCSD1_BASE	     0x01D00000
 
+void __iomem  *davinci_sysmodbase;
+
 static struct resource i2c_resources[] = {
 	{
 		.start		= DAVINCI_I2C_BASE,
@@ -182,6 +184,7 @@ static struct platform_device davinci_mmcsd1_device = {
 	.resource = mmcsd1_resources,
 };
 
+#define DM64XX_VDD3P3V_PWDN     0x48
 
 void __init davinci_setup_mmc(int module, struct davinci_mmc_config *config)
 {
@@ -209,12 +212,12 @@ void __init davinci_setup_mmc(int module, struct davinci_mmc_config *config)
 			davinci_cfg_reg(DM355_SD1_DATA2);
 			davinci_cfg_reg(DM355_SD1_DATA3);
 		} else if (cpu_is_davinci_dm365()) {
-			void __iomem *pupdctl1 =
-				IO_ADDRESS(DAVINCI_SYSTEM_MODULE_BASE + 0x7c);
-
 			/* Configure pull down control */
-			__raw_writel((__raw_readl(pupdctl1) & ~0xfc0),
-					pupdctl1);
+			void __iomem *pupdctl1 = DAVINCI_SYSMODULE_VIRT(0x7c);
+			unsigned v;
+
+			v = readl(pupdctl1);
+			writel(v & ~0xfc0, pupdctl1);
 
 			mmcsd1_resources[0].start = DM365_MMCSD1_BASE;
 			mmcsd1_resources[0].end = DM365_MMCSD1_BASE +
@@ -243,11 +246,9 @@ void __init davinci_setup_mmc(int module, struct davinci_mmc_config *config)
 			mmcsd0_resources[2].start = IRQ_DM365_SDIOINT0;
 		} else if (cpu_is_davinci_dm644x()) {
 			/* REVISIT: should this be in board-init code? */
-			void __iomem *base =
-				IO_ADDRESS(DAVINCI_SYSTEM_MODULE_BASE);
-
 			/* Power-on 3.3V IO cells */
-			__raw_writel(0, base + DM64XX_VDD3P3V_PWDN);
+			writel(0,
+				DAVINCI_SYSMODULE_VIRT(DM64XX_VDD3P3V_PWDN));
 			/*Set up the pull regiter for MMC */
 			davinci_cfg_reg(DM644X_MSTK);
 		}

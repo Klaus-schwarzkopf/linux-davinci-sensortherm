@@ -21,9 +21,10 @@
  */
 #define DAVINCI_SYSTEM_MODULE_BASE        0x01C40000
 
-/* System control register offsets */
-#define DM64XX_VDD3P3V_PWDN	0x48
-
+#ifndef __ASSEMBLER__
+extern void __iomem  *davinci_sysmodbase;
+#define DAVINCI_SYSMODULE_VIRT(x)	(davinci_sysmodbase + (x))
+#endif
 /*
  * I/O mapping
  */

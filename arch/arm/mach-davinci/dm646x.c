@@ -903,6 +903,8 @@ void __init dm646x_init(void)
 {
 	dm646x_board_setup_refclk(&ref_clk);
 	davinci_common_init(&davinci_soc_info_dm646x);
+	davinci_sysmodbase = ioremap_nocache(DAVINCI_SYSTEM_MODULE_BASE, 0x800);
+	WARN_ON(!davinci_sysmodbase);
 }
 
 static int __init dm646x_init_devices(void)
