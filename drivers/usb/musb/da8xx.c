@@ -89,7 +89,6 @@ struct da8xx_glue {
 };
 
 #ifdef CONFIG_USB_TI_CPPI41_DMA
-
 /*
  * CPPI 4.1 resources used for USB OTG controller module:
  *
@@ -106,10 +105,10 @@ struct da8xx_glue {
  * ---------------------------------
  */
 
-static const u16 tx_comp_q[] = { 24, 25 };
-static const u16 rx_comp_q[] = { 26, 27 };
+static const u16 tx_comp_q[] = { 24, 24, 24, 24 };
+static const u16 rx_comp_q[] = { 26, 26, 26, 26 };
 
-const struct usb_cppi41_info usb_cppi41_info = {
+struct usb_cppi41_info usb_cppi41_info = {
 	.dma_block	= 0,
 	.ep_dma_ch	= { 0, 1, 2, 3 },
 	.q_mgr		= 0,
@@ -422,7 +421,7 @@ static irqreturn_t da8xx_musb_interrupt(int irq, void *hci)
 	spin_lock_irqsave(&musb->lock, flags);
 
 #ifdef CONFIG_USB_TI_CPPI41_DMA
-	if (is_cppi41_enabled()) {
+	if (is_cppi41_enabled(musb)) {
 		/*
 		 * Check for the interrupts from Tx/Rx completion queues; they
 		 * are level-triggered and will stay asserted until the queues
@@ -620,7 +619,7 @@ static int da8xx_musb_exit(struct musb *musb)
 
 static const struct musb_platform_ops da8xx_ops = {
 	.fifo_mode	= 2,
-	.flags		= MUSB_GLUE_EP_ADDR_FLAT_MAPPING,
+	.flags		= MUSB_GLUE_EP_ADDR_FLAT_MAPPING | MUSB_GLUE_DMA_CPPI41,
 	.init		= da8xx_musb_init,
 	.exit		= da8xx_musb_exit,
 
@@ -634,6 +633,9 @@ static const struct musb_platform_ops da8xx_ops = {
 
 	.read_fifo	= musb_read_fifo,
 	.write_fifo	= musb_write_fifo,
+
+	.dma_controller_create = cppi41_dma_controller_create,
+	.dma_controller_destroy = cppi41_dma_controller_destroy,
 };
 
 static u64 da8xx_dmamask = DMA_BIT_MASK(32);

@@ -122,7 +122,7 @@ struct cppi41 {
 	struct usb_cppi41_info *cppi_info; /* cppi channel information */
 };
 
-struct usb_cppi41_info usb_cppi41_info;
+extern struct usb_cppi41_info usb_cppi41_info;
 EXPORT_SYMBOL(usb_cppi41_info);
 
 #ifdef DEBUG_CPPI_TD
