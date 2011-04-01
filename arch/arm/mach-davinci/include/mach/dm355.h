@@ -14,6 +14,10 @@
 #include <mach/hardware.h>
 #include <mach/asp.h>
 #include <media/davinci/vpfe_capture.h>
+#include <media/davinci/vpbe_types.h>
+#include <media/davinci/vpbe.h>
+#include <media/davinci/vpss.h>
+#include <media/davinci/vpbe_osd.h>
 
 #define DM355_ASYNC_EMIF_CONTROL_BASE	0x01E10000
 #define DM355_ASYNC_EMIF_DATA_CE0_BASE	0x02000000
@@ -28,5 +32,6 @@ void dm355_init_spi0(unsigned chipselect_mask,
 		struct spi_board_info *info, unsigned len);
 void __init dm355_init_asp1(u32 evt_enable, struct snd_platform_data *pdata);
 void dm355_set_vpfe_config(struct vpfe_config *cfg);
+void dm355_set_vpbe_display_config(struct vpbe_display_config *cfg);
 
 #endif /* __ASM_ARCH_DM355_H */

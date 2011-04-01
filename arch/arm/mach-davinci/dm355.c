@@ -676,20 +676,22 @@ static void dm355_ccdc_setup_pinmux(void)
 	davinci_cfg_reg(DM355_VIN_CINH_EN);
 }
 
+#define DM355_ISP5_REG_BASE		0x01c70800
+
 static struct resource dm355_vpss_resources[] = {
 	{
 		/* VPSS BL Base address */
 		.name		= "vpss",
-		.start          = 0x01c70800,
-		.end            = 0x01c70800 + 0xff,
-		.flags          = IORESOURCE_MEM,
+		.start		= DM355_ISP5_REG_BASE,
+		.end		= DM355_ISP5_REG_BASE + 0xff,
+		.flags		= IORESOURCE_MEM,
 	},
 	{
 		/* VPSS CLK Base address */
 		.name		= "vpss",
-		.start          = 0x01c70000,
-		.end            = 0x01c70000 + 0xf,
-		.flags          = IORESOURCE_MEM,
+		.start		= 0x01c70000,
+		.end		= 0x01c70000 + 0xf,
+		.flags		= IORESOURCE_MEM,
 	},
 };
 
@@ -714,7 +716,8 @@ static struct resource vpfe_resources[] = {
 	},
 };
 
-static u64 vpfe_capture_dma_mask = DMA_BIT_MASK(32);
+static u64 dm355_video_dma_mask = DMA_BIT_MASK(32);
+
 static struct resource dm355_ccdc_resource[] = {
 	/* CCDC Base address */
 	{
@@ -729,7 +732,7 @@ static struct platform_device dm355_ccdc_dev = {
 	.num_resources  = ARRAY_SIZE(dm355_ccdc_resource),
 	.resource       = dm355_ccdc_resource,
 	.dev = {
-		.dma_mask               = &vpfe_capture_dma_mask,
+		.dma_mask               = &dm355_video_dma_mask,
 		.coherent_dma_mask      = DMA_BIT_MASK(32),
 		.platform_data		= dm355_ccdc_setup_pinmux,
 	},
@@ -741,7 +744,7 @@ static struct platform_device vpfe_capture_dev = {
 	.num_resources	= ARRAY_SIZE(vpfe_resources),
 	.resource	= vpfe_resources,
 	.dev = {
-		.dma_mask		= &vpfe_capture_dma_mask,
+		.dma_mask		= &dm355_video_dma_mask,
 		.coherent_dma_mask	= DMA_BIT_MASK(32),
 	},
 };
@@ -749,6 +752,225 @@ static struct platform_device vpfe_capture_dev = {
 void dm355_set_vpfe_config(struct vpfe_config *cfg)
 {
 	vpfe_capture_dev.dev.platform_data = cfg;
+}
+
+#define DM355_OSD_REG_BASE		0x01C70200
+
+static struct resource dm355_osd_resources[] = {
+	{
+		.start	= DM355_OSD_REG_BASE,
+		.end	= DM355_OSD_REG_BASE + 0x180,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct osd_platform_data dm355_osd_data = {
+	.vpbe_type	= DM355_VPBE,
+};
+
+static struct platform_device dm355_osd_dev = {
+	.name		= VPBE_OSD_SUBDEV_NAME,
+	.id		= -1,
+	.num_resources	= ARRAY_SIZE(dm355_osd_resources),
+	.resource	= dm355_osd_resources,
+	.dev = {
+		.dma_mask		= &dm355_video_dma_mask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
+		.platform_data		= &dm355_osd_data,
+	},
+};
+
+#define DM355_VENC_REG_BASE		0x01C70400
+#define DM3XX_VDAC_CONFIG		0x01C4002C
+
+static struct resource dm355_venc_resources[] = {
+	{
+		.start	= IRQ_VENCINT,
+		.end	= IRQ_VENCINT,
+		.flags	= IORESOURCE_IRQ,
+	},
+	/* venc registers io space */
+	{
+		.start	= DM355_VENC_REG_BASE,
+		.end	= DM355_VENC_REG_BASE + 0x180,
+		.flags	= IORESOURCE_MEM,
+	},
+	/* VDAC config register io space */
+	{
+		.start	= DM3XX_VDAC_CONFIG,
+		.end	= DM3XX_VDAC_CONFIG + 4,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct resource dm355_v4l2_disp_resources[] = {
+	{
+		.start	= IRQ_VENCINT,
+		.end	= IRQ_VENCINT,
+		.flags	= IORESOURCE_IRQ,
+	},
+	/* venc registers io space */
+	{
+		.start	= DM355_VENC_REG_BASE,
+		.end	= DM355_VENC_REG_BASE + 0x180,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static int dm355_vpbe_setup_pinmux(enum v4l2_mbus_pixelcode if_type,
+			    int field)
+{
+	int ret = 0;
+
+	switch (if_type) {
+	case V4L2_MBUS_FMT_SGRBG8_1X8:
+		davinci_cfg_reg(DM355_VOUT_COUTL_EN);
+		davinci_cfg_reg(DM355_VOUT_COUTH_EN);
+		davinci_cfg_reg(DM355_VOUT_FIELD_G70);
+		break;
+	case V4L2_MBUS_FMT_YUYV10_1X20:
+		/*
+		 * This was VPBE_DIGITAL_IF_YCC16. Replace the enum
+		 * accordingly when the right one gets into open source
+		 */
+		if (field)
+			davinci_cfg_reg(DM355_VOUT_FIELD);
+		else
+			davinci_cfg_reg(DM355_VOUT_FIELD_G70);
+		davinci_cfg_reg(DM355_VOUT_COUTL_EN);
+		davinci_cfg_reg(DM355_VOUT_COUTH_EN);
+		break;
+	default:
+		ret = -EINVAL;
+	}
+	return ret;
+}
+
+static inline u32 dm355_reg_modify(void *reg, u32 val, u32 mask)
+{
+	u32 new_val = (__raw_readl(reg) & ~mask) | (val & mask);
+	__raw_writel(new_val, reg);
+	return new_val;
+}
+
+static void __iomem *vpss_clk_ctrl_reg;
+static void __iomem *venc_vmod_reg;
+static void __iomem *venc_ycctl_reg;
+
+static int dm355_set_if_config(enum v4l2_mbus_pixelcode pixcode)
+{
+	unsigned int val = 0;
+	int ret = 0;
+
+	switch (pixcode) {
+	case V4L2_MBUS_FMT_FIXED:
+		/* Analog out.do nothing */
+		break;
+	case V4L2_MBUS_FMT_YUYV8_2X8:
+		/* BT656 */
+		val = (1<<12);
+		/*set VDMD in VMOD */
+		dm355_reg_modify(venc_vmod_reg, val, (7 << 12));
+		/* Set YCCTL */
+		dm355_reg_modify(venc_ycctl_reg, 1, 1);
+		break;
+	case V4L2_MBUS_FMT_YUYV10_1X20:
+		/*
+		 * This was VPBE_DIGITAL_IF_YCC16.BT656. Replace the enum
+		 * accordingly when the right one gets into open source.
+		 */
+		val = 0 << 12;
+		dm355_reg_modify(venc_vmod_reg, val, (7 << 12));
+		dm355_reg_modify(venc_ycctl_reg, 1, 1);
+		break;
+	case V4L2_MBUS_FMT_SGRBG8_1X8:
+		/*
+		 * This was VPBE_DIGITAL_IF_PRGB/SRGB. Replace the enum
+		 * accordingly when the right one gets into open source.
+		 */
+		val = 2 << 12;
+		dm355_reg_modify(venc_vmod_reg, val, (7 << 12));
+		break;
+	default:
+		ret = -EINVAL;
+		break;
+	}
+	return ret;
+}
+
+static int dm355_venc_setup_clock(enum vpbe_enc_timings_type type, __u64 mode)
+{
+	int ret = 0;
+
+	switch (type) {
+	case VPBE_ENC_STD:
+		vpss_enable_clock(VPSS_VENC_CLOCK_SEL, 0);
+		__raw_writel(0x18, vpss_clk_ctrl_reg);
+		break;
+	case VPBE_ENC_DV_PRESET:
+		switch ((unsigned int)mode) {
+		case V4L2_DV_720P60:
+		case V4L2_DV_1080I60:
+		case V4L2_DV_1080P30:
+		case V4L2_DV_1080I30:
+			/*
+			 * For HD, use external clock source since we cannot
+			 * support HD mode with internal clocks.
+			 */
+			__raw_writel(0xa, vpss_clk_ctrl_reg);
+			break;
+		default:
+			ret = -EINVAL;
+		}
+		break;
+	default:
+		ret = -EINVAL;
+	}
+	return ret;
+}
+
+static struct platform_device dm355_vpbe_v4l2_display = {
+	.name		= "vpbe-v4l2",
+	.id		= -1,
+	.num_resources	= ARRAY_SIZE(dm355_v4l2_disp_resources),
+	.resource	= dm355_v4l2_disp_resources,
+	.dev		= {
+		.dma_mask		= &dm355_video_dma_mask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
+	},
+};
+
+struct venc_platform_data dm355_venc_pdata = {
+	.venc_type		= DM355_VPBE,
+	.setup_pinmux		= dm355_vpbe_setup_pinmux,
+	.setup_clock		= dm355_venc_setup_clock,
+	.setup_if_config	= dm355_set_if_config,
+};
+
+static struct platform_device dm355_venc_dev = {
+	.name		= VPBE_VENC_SUBDEV_NAME,
+	.id		= -1,
+	.num_resources	= ARRAY_SIZE(dm355_venc_resources),
+	.resource	= dm355_venc_resources,
+	.dev		= {
+		.dma_mask		= &dm355_video_dma_mask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
+		.platform_data		= (void *)&dm355_venc_pdata,
+	},
+};
+
+static struct platform_device dm355_vpbe_dev = {
+	.name		= "vpbe_controller",
+	.id		= -1,
+	.dev		= {
+		.dma_mask		= &dm355_video_dma_mask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
+	},
+};
+
+void dm355_set_vpbe_display_config(struct vpbe_display_config *cfg)
+{
+	dm355_vpbe_dev.dev.platform_data = cfg;
 }
 
 /*----------------------------------------------------------------------*/
@@ -874,6 +1096,29 @@ void __init dm355_init_asp1(u32 evt_enable, struct snd_platform_data *pdata)
 void __init dm355_init(void)
 {
 	davinci_common_init(&davinci_soc_info_dm355);
+	davinci_sysmodbase = ioremap_nocache(DAVINCI_SYSTEM_MODULE_BASE, 0x800);
+	WARN_ON(!davinci_sysmodbase);
+}
+
+static struct platform_device *dm355_video_devices[] __initdata = {
+	&dm355_vpss_device,
+	&dm355_ccdc_dev,
+	&vpfe_capture_dev,
+	&dm355_osd_dev,
+	&dm355_venc_dev,
+	&dm355_vpbe_dev,
+	&dm355_vpbe_v4l2_display,
+};
+
+static int __init dm355_init_video(void)
+{
+	/* Add ccdc clock aliases */
+	clk_add_alias("master", dm355_ccdc_dev.name, "vpss_master", NULL);
+	clk_add_alias("slave", dm355_ccdc_dev.name, "vpss_slave", NULL);
+	vpss_clk_ctrl_reg = DAVINCI_SYSMODULE_VIRT(0x44);
+	platform_add_devices(dm355_video_devices,
+				ARRAY_SIZE(dm355_video_devices));
+	return 0;
 }
 
 static int __init dm355_init_devices(void)
@@ -886,10 +1131,8 @@ static int __init dm355_init_devices(void)
 	clk_add_alias("slave", dm355_ccdc_dev.name, "vpss_master", NULL);
 	davinci_cfg_reg(DM355_INT_EDMA_CC);
 	platform_device_register(&dm355_edma_device);
-	platform_device_register(&dm355_vpss_device);
-	platform_device_register(&dm355_ccdc_dev);
-	platform_device_register(&vpfe_capture_dev);
 
+	dm355_init_video();
 	return 0;
 }
 postcore_initcall(dm355_init_devices);
