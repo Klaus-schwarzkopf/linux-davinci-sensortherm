@@ -28,6 +28,18 @@
 #include <media/v4l2-subdev.h>
 #include <media/v4l2-chip-ident.h>
 
+#define THS7303_CHANNEL_1 (1)
+#define THS7303_CHANNEL_2 (2)
+#define THS7303_CHANNEL_3 (3)
+
+enum ths7303_filter_mode {
+	THS7303_FILTER_MODE_480I_576I,
+	THS7303_FILTER_MODE_480P_576P,
+	THS7303_FILTER_MODE_720P_1080I,
+	THS7303_FILTER_MODE_1080P,
+	THS7303_FILTER_MODE_DISABLE
+};
+
 MODULE_DESCRIPTION("TI THS7303 video amplifier driver");
 MODULE_AUTHOR("Chaithrika U S");
 MODULE_LICENSE("GPL");
@@ -37,35 +49,96 @@ module_param(debug, int, 0644);
 MODULE_PARM_DESC(debug, "Debug level 0-1");
 
 /* following function is used to set ths7303 */
-static int ths7303_setvalue(struct v4l2_subdev *sd, v4l2_std_id std)
+int ths7303_setval(struct v4l2_subdev *sd, enum ths7303_filter_mode mode)
 {
-	int err = 0;
-	u8 val;
-	struct i2c_client *client;
+	u8 val = 0, input_bias_luma = 3, input_bias_chroma = 3, temp;
+	int err = 0, disable = 0;
 
-	client = v4l2_get_subdevdata(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
 
-	if (std & (V4L2_STD_ALL & ~V4L2_STD_SECAM)) {
-		val = 0x02;
-		v4l2_dbg(1, debug, sd, "setting value for SDTV format\n");
-	} else {
-		val = 0x00;
-		v4l2_dbg(1, debug, sd, "disabling all channels\n");
+	if (client == NULL)
+		return err;
+
+
+	switch (mode) {
+	case THS7303_FILTER_MODE_1080P:
+		val = (3 << 6);
+		val |= (3 << 3);
+		break;
+	case THS7303_FILTER_MODE_720P_1080I:
+		val = (2 << 6);
+		val |= (2 << 3);
+		break;
+	case THS7303_FILTER_MODE_480P_576P:
+		val = (1 << 6);
+		val |= (1 << 3);
+		break;
+	case THS7303_FILTER_MODE_480I_576I:
+		break;
+	case THS7303_FILTER_MODE_DISABLE:
+		printk(KERN_INFO "mode disabled\n");
+		/* disable all channels */
+		disable = 1;
+	default:
+		/* disable all channels */
+		disable = 1;
 	}
-
-	err |= i2c_smbus_write_byte_data(client, 0x01, val);
-	err |= i2c_smbus_write_byte_data(client, 0x02, val);
-	err |= i2c_smbus_write_byte_data(client, 0x03, val);
-
+	/* Setup channel 2 - Luma - Green */
+	temp = val;
+	if (!disable)
+		val |= input_bias_luma;
+	err = i2c_smbus_write_byte_data(client, THS7303_CHANNEL_2, val);
 	if (err)
-		v4l2_err(sd, "write failed\n");
+		goto out;
 
+	/* setup two chroma channels */
+	if (!disable)
+		temp |= input_bias_chroma;
+
+	err = i2c_smbus_write_byte_data(client, THS7303_CHANNEL_1, temp);
+	if (err)
+		goto out;
+
+	err = i2c_smbus_write_byte_data(client, THS7303_CHANNEL_3, temp);
+	if (err)
+		goto out;
+out:
+	printk(KERN_INFO "write byte data failed\n");
 	return err;
 }
 
 static int ths7303_s_std_output(struct v4l2_subdev *sd, v4l2_std_id norm)
 {
-	return ths7303_setvalue(sd, norm);
+	if (norm & (V4L2_STD_ALL & ~V4L2_STD_SECAM))
+		return ths7303_setval(sd, THS7303_FILTER_MODE_480I_576I);
+	else
+		return ths7303_setval(sd, THS7303_FILTER_MODE_DISABLE);
+}
+
+/* for setting filter for HD output */
+static int ths7303_s_dv_preset(struct v4l2_subdev *sd,
+			       struct v4l2_dv_preset *preset)
+{
+	int res = 0;
+
+	switch (preset->preset) {
+	case V4L2_DV_1080P60:
+		res = ths7303_setval(sd, THS7303_FILTER_MODE_1080P);
+		break;
+	case V4L2_DV_720P60:
+	case V4L2_DV_1080I30:
+		res = ths7303_setval(sd, THS7303_FILTER_MODE_720P_1080I);
+		break;
+	case V4L2_DV_480P59_94:
+	case V4L2_DV_576P50:
+		res = ths7303_setval(sd, THS7303_FILTER_MODE_480P_576P);
+		break;
+	default:
+		/* disable all channels */
+		res = ths7303_setval(sd, THS7303_FILTER_MODE_DISABLE);
+	}
+
+	return res;
 }
 
 static int ths7303_g_chip_ident(struct v4l2_subdev *sd,
@@ -78,6 +151,7 @@ static int ths7303_g_chip_ident(struct v4l2_subdev *sd,
 
 static const struct v4l2_subdev_video_ops ths7303_video_ops = {
 	.s_std_output	= ths7303_s_std_output,
+	.s_dv_preset    = ths7303_s_dv_preset,
 };
 
 static const struct v4l2_subdev_core_ops ths7303_core_ops = {
@@ -93,7 +167,6 @@ static int ths7303_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
 {
 	struct v4l2_subdev *sd;
-	v4l2_std_id std_id = V4L2_STD_NTSC;
 
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_SMBUS_BYTE_DATA))
 		return -ENODEV;
@@ -107,7 +180,7 @@ static int ths7303_probe(struct i2c_client *client,
 
 	v4l2_i2c_subdev_init(sd, client, &ths7303_ops);
 
-	return ths7303_setvalue(sd, std_id);
+	return ths7303_s_std_output(sd, V4L2_STD_NTSC);
 }
 
 static int ths7303_remove(struct i2c_client *client)
