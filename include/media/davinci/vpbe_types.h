@@ -88,4 +88,6 @@ struct vpbe_enc_mode_info {
 	unsigned int flags;
 };
 
+#define CUSTOM_TIMING_480_272 0x480272
+
 #endif

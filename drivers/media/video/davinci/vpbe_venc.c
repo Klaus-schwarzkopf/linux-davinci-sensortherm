@@ -27,6 +27,8 @@
 
 #include <mach/hardware.h>
 #include <mach/mux.h>
+#include <mach/cputype.h>
+#include <mach/gpio.h>
 #include <mach/io.h>
 #include <mach/i2c.h>
 
@@ -125,11 +127,31 @@ static void venc_enabledigitaloutput(struct v4l2_subdev *sd, int benable)
 {
 	struct venc_state *venc = to_state(sd);
 	struct venc_platform_data *pdata = venc->pdata;
+	void __iomem *vpss_clkctl_reg;
+
 	v4l2_dbg(debug, 2, sd, "venc_enabledigitaloutput\n");
+
+	vpss_clkctl_reg = DAVINCI_SYSMODULE_VIRT(0x44);
 
 	if (benable) {
 		venc_write(sd, VENC_VMOD, 0);
 		venc_write(sd, VENC_CVBS, 0);
+
+		if (cpu_is_davinci_dm368()) {
+			enable_lcd();
+
+			/* Select EXTCLK as video clock source */
+			__raw_writel(0x1a, vpss_clkctl_reg);
+
+			/* Set PINMUX for GPIO82 */
+			davinci_cfg_reg(DM365_GPIO82);
+			gpio_request(82, "lcd_oe");
+
+			/* Set GPIO82 low */
+			gpio_direction_output(82, 0);
+			gpio_set_value(82, 0);
+		}
+
 		venc_write(sd, VENC_LCDOUT, 0);
 		venc_write(sd, VENC_HSPLS, 0);
 		venc_write(sd, VENC_HSTART, 0);
@@ -141,7 +163,6 @@ static void venc_enabledigitaloutput(struct v4l2_subdev *sd, int benable)
 		venc_write(sd, VENC_VINT, 0);
 		venc_write(sd, VENC_YCCCTL, 0);
 		venc_write(sd, VENC_DACSEL, 0);
-
 	} else {
 		venc_write(sd, VENC_VMOD, 0);
 		/* disable VCLK output pin enable */
@@ -156,7 +177,6 @@ static void venc_enabledigitaloutput(struct v4l2_subdev *sd, int benable)
 
 		/* Disable LCD output control (accepting default polarity) */
 		venc_write(sd, VENC_LCDOUT, 0);
-		venc_write(sd, VENC_CMPNT, 0x100);
 		if (pdata->venc_type != DM355_VPBE)
 			venc_write(sd, VENC_CMPNT, 0x100);
 		venc_write(sd, VENC_HSPLS, 0);
@@ -317,6 +337,7 @@ static int venc_set_480p59_94(struct v4l2_subdev *sd)
 	venc_modify(sd, VENC_VMOD, VENC_VMOD_VDMD_YCBCR8 <<
 		    VENC_VMOD_VDMD_SHIFT, VENC_VMOD_VDMD);
 
+	venc_write(sd, VENC_DACTST, 0x0);
 	venc_modify(sd, VENC_VMOD, VENC_VMOD_VENC, VENC_VMOD_VENC);
 	return 0;
 }
@@ -330,7 +351,6 @@ static void venc_set_display_timing(struct v4l2_subdev *sd,
 				    struct vpbe_enc_mode_info *mode)
 {
 	v4l2_dbg(debug, 2, sd, "venc_set_display_timing\n");
-
 	venc_write(sd, VENC_HSPLS, mode->hsync_len);
 	venc_write(sd, VENC_HSTART, mode->left_margin);
 	venc_write(sd, VENC_HVALID, mode->xres);
@@ -358,7 +378,8 @@ static int venc_set_prgb(struct v4l2_subdev *sd,
 	v4l2_dbg(debug, 2, sd, "venc_set_prgb\n");
 
 	/* Setup clock at VPSS & VENC for SD */
-	if (pdata->setup_clock(VPBE_ENC_DV_PRESET, V4L2_DV_720P60) < 0)
+	if (pdata->setup_clock(VPBE_ENC_CUSTOM_TIMINGS,
+		CUSTOM_TIMING_480_272) < 0)
 		return -EINVAL;
 
 	/* setup pinmux */
@@ -415,6 +436,11 @@ static int venc_set_prgb(struct v4l2_subdev *sd,
 	/* Configure VMOD. No change in VENC bit */
 	venc_write(sd, VENC_VMOD, 0x2011);
 	venc_write(sd, VENC_LCDOUT, 0x1);
+	if (cpu_is_davinci_dm368()) {
+		/* Turn on LCD display */
+		mdelay(200);
+		gpio_set_value(82, 1);
+	}
 	return 0;
 }
 
@@ -693,6 +719,7 @@ static int venc_set_576p50(struct v4l2_subdev *sd)
 	venc_modify(sd, VENC_VMOD, VENC_VMOD_VDMD_YCBCR8 <<
 		    VENC_VMOD_VDMD_SHIFT, VENC_VMOD_VDMD);
 	venc_modify(sd, VENC_VMOD, VENC_VMOD_VENC, VENC_VMOD_VENC);
+	venc_write(sd, VENC_DACTST, 0x0);
 	return 0;
 }
 
@@ -723,6 +750,7 @@ static int venc_set_720p60_internal(struct v4l2_subdev *sd)
 		    VENC_VMOD_TVTYP);
 	venc_modify(sd, VENC_VMOD, VENC_VMOD_VENC, VENC_VMOD_VENC);
 	venc_write(sd, VENC_XHINTVL, 0);
+	venc_write(sd, VENC_DACTST, 0x0);
 	return 0;
 }
 
@@ -752,6 +780,7 @@ static int venc_set_1080i30_internal(struct v4l2_subdev *sd)
 		    VENC_VMOD_TVTYP);
 	venc_modify(sd, VENC_VMOD, VENC_VMOD_VENC, VENC_VMOD_VENC);
 	venc_write(sd, VENC_XHINTVL, 0);
+	venc_write(sd, VENC_DACTST, 0x0);
 	return 0;
 }
 
@@ -801,26 +830,11 @@ static int venc_s_routing(struct v4l2_subdev *sd, u32 input, u32 output,
 			  u32 config)
 {
 	struct venc_state *venc = to_state(sd);
-	int max_output, lcd_out_index, ret = 0;
+	int ret = 0;
 
 	v4l2_dbg(debug, 1, sd, "venc_s_routing\n");
 
-	if (venc->pdata->venc_type == DM355_VPBE) {
-		max_output = 1 + venc->pdata->num_lcd_outputs;
-		lcd_out_index = 1;
-	} else if ((venc->pdata->venc_type == DM644X_VPBE) ||
-		 (venc->pdata->venc_type == DM365_VPBE)) {
-		max_output = 2 + venc->pdata->num_lcd_outputs;
-		lcd_out_index = 3;
-	} else
-		return -EINVAL;
-
-
-	if (output >= max_output)
-		return -EINVAL;
-
-	if (output < lcd_out_index)
-		ret = venc_set_dac(sd, output);
+	ret = venc_set_dac(sd, output);
 	if (!ret)
 		venc->output = output;
 	return ret;
@@ -831,10 +845,13 @@ static long venc_ioctl(struct v4l2_subdev *sd,
 			void *arg)
 {
 	u32 val;
-	struct venc_callback *next, *prev, *callback;
-	struct venc_state *venc = to_state(sd);
+	int ret = 0;
 	unsigned long flags;
 	unsigned event = 0;
+	struct venc_callback *next, *prev, *callback;
+	struct venc_state *venc = to_state(sd);
+	struct vpbe_enc_mode_info *mode_info;
+	struct venc_platform_data *pdata = venc->pdata;
 
 	switch (cmd) {
 	case VENC_GET_FLD:
@@ -877,11 +894,35 @@ static long venc_ioctl(struct v4l2_subdev *sd,
 		callback = callback->next;
 		}
 		break;
+	case VENC_CONFIGURE:
+		mode_info = (struct vpbe_enc_mode_info *)arg;
+
+		if (NULL == mode_info)
+			return -EINVAL;
+
+		if (pdata->if_params == V4L2_MBUS_FMT_FIXED)
+			return 0;
+		switch (pdata->if_params) {
+		case V4L2_MBUS_FMT_RGB565_2X8_BE:
+			ret = venc_set_prgb(sd, mode_info);
+			break;
+		case V4L2_MBUS_FMT_SGRBG8_1X8:
+			ret = venc_set_srgb(sd, mode_info);
+			break;
+		case V4L2_MBUS_FMT_YUYV10_1X20:
+			ret = venc_set_ycc16_modes(sd, mode_info);
+			break;
+		case V4L2_MBUS_FMT_Y10_1X10:
+			ret = venc_set_ycc8_modes(sd, mode_info);
+			break;
+		default:
+			ret = -EINVAL;
+		}
 	default:
-		v4l2_err(sd, "Wrong IOCTL cmd\n");
+		v4l2_err(sd, "Wrong IOCTL cmd:%x\n", cmd);
 		break;
 	}
-	return 0;
+	return ret;
 }
 
 static const struct v4l2_subdev_core_ops venc_core_ops = {

@@ -1167,7 +1167,6 @@ static int vpbe_display_s_output(struct file *file, void *priv,
 	struct vpbe_fh *fh = priv;
 	struct vpbe_display_obj *layer = fh->layer;
 	int ret = 0;
-
 	v4l2_dbg(1, debug, &vpbe_dev->v4l2_dev,	"VIDIOC_S_OUTPUT\n");
 	/* If streaming is started, return error */
 	if (layer->started) {
@@ -1192,8 +1191,20 @@ static int vpbe_display_s_output(struct file *file, void *priv,
 static int vpbe_display_g_output(struct file *file, void *priv,
 				unsigned int *i)
 {
+	int ret = 0;
+
 	v4l2_dbg(1, debug, &vpbe_dev->v4l2_dev, "VIDIOC_G_OUTPUT\n");
 	/* Get the standard from the current encoder */
+
+	if (NULL != vpbe_dev->ops.get_output) {
+		ret = vpbe_dev->ops.get_output(vpbe_dev);
+		if (ret) {
+			v4l2_err(&vpbe_dev->v4l2_dev,
+				"Failed to get output for sub devices\n");
+			return -EINVAL;
+		}
+	}
+
 	*i = vpbe_dev->current_out_index;
 
 	return 0;
@@ -1999,12 +2010,9 @@ static __devinit int vpbe_display_probe(struct platform_device *pdev)
 		vbd->v4l2_dev   = &vpbe_dev->v4l2_dev;
 		vbd->lock	= &vpbe_display_layer->opslock;
 
-		if (vpbe_dev->current_timings.timings_type & VPBE_ENC_STD) {
-			vbd->tvnorms	= (V4L2_STD_525_60 | V4L2_STD_625_50);
-			vbd->current_norm =
-				vpbe_dev->current_timings.timings.std_id;
-		} else
-			vbd->current_norm = 0;
+		vbd->tvnorms	= (V4L2_STD_525_60 | V4L2_STD_625_50);
+		vbd->current_norm =
+			vpbe_dev->current_timings.timings.std_id;
 
 		snprintf(vbd->name, sizeof(vbd->name),
 			 "DaVinci_VPBE Display_DRIVER_V%d.%d.%d",

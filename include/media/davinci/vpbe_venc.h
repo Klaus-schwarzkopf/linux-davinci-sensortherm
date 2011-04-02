@@ -62,6 +62,10 @@ enum venc_ioctls {
 	VENC_REG_CALLBACK,
 	VENC_UNREG_CALLBACK,
 	VENC_INTERRUPT,
+	VENC_CONFIGURE,
 };
+
+void enable_lcd(void);
+void enable_hd_clk(void);
 
 #endif

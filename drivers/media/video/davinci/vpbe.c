@@ -33,8 +33,8 @@
 #include <media/davinci/vpbe.h>
 #include <media/davinci/vpss.h>
 
-#define VPBE_DEFAULT_OUTPUT	"Composite"
-#define VPBE_DEFAULT_MODE	"ntsc"
+#define VPBE_DEFAULT_OUTPUT   "Composite"
+#define VPBE_DEFAULT_MODE     "ntsc"
 
 static char *def_output = VPBE_DEFAULT_OUTPUT;
 static char *def_mode = VPBE_DEFAULT_MODE;
@@ -195,7 +195,7 @@ static int vpbe_get_std_info(struct vpbe_device *vpbe_dev,
 	struct vpbe_enc_mode_info var;
 	int curr_output = vpbe_dev->current_out_index, i;
 
-	for (i = 0; i < vpbe_dev->cfg->outputs[curr_output].num_modes; i++) {
+	for (i = 0; i < cfg->outputs[curr_output].num_modes; i++) {
 		var = cfg->outputs[curr_output].modes[i];
 		if ((var.timings_type & VPBE_ENC_STD) &&
 		  (var.timings.std_id & std_id)) {
@@ -236,13 +236,12 @@ static int vpbe_set_output(struct vpbe_device *vpbe_dev, int index)
 	struct encoder_config_info *curr_enc_info =
 			vpbe_current_encoder_info(vpbe_dev);
 	int ret = 0, enc_out_index = 0, sd_index;
+	int lcd_index = 0;
 	enum v4l2_mbus_pixelcode if_params;
-
 	if (index >= vpbe_config->num_outputs)
 		return -EINVAL;
 
 	mutex_lock(&vpbe_dev->lock);
-
 	sd_index = vpbe_dev->current_sd_index;
 	enc_out_index = vpbe_config->outputs[index].output.index;
 	/*
@@ -262,17 +261,21 @@ static int vpbe_set_output(struct vpbe_device *vpbe_dev, int index)
 			ret = -EINVAL;
 			goto out;
 		}
-		if_params = vpbe_config->outputs[index].if_params;
-		venc_device->setup_if_config(if_params);
+	}
+	if_params = vpbe_config->outputs[index].if_params;
+	venc_device->setup_if_config(if_params);
+	if (!ret)
+		venc_device->if_params = if_params;
+
+	/* VENC dac selection only if it is non-lcd case */
+	lcd_index = vpbe_config->num_outputs - venc_device->num_lcd_outputs;
+	if (vpbe_config->outputs[index].output.index < lcd_index) {
+		/* Set output at the encoder */
+		ret = v4l2_subdev_call(vpbe_dev->encoders[sd_index], video,
+					s_routing, 0, enc_out_index, 0);
 		if (ret)
 			goto out;
 	}
-
-	/* Set output at the encoder */
-	ret = v4l2_subdev_call(vpbe_dev->encoders[sd_index], video,
-				       s_routing, 0, enc_out_index, 0);
-	if (ret)
-		goto out;
 
 	/*
 	 * It is assumed that venc or extenal encoder will set a default
@@ -285,13 +288,22 @@ static int vpbe_set_output(struct vpbe_device *vpbe_dev, int index)
 	ret = vpbe_get_mode_info(vpbe_dev,
 				 vpbe_config->outputs[index].default_mode,
 				 index);
+	/*
+	 * set the lcd controller output for the given mode. For internal dac
+	 * outputs, this wouldn't do anything.
+	 */
 	if (!ret) {
-		osd_device->ops.set_left_margin(osd_device,
-			vpbe_dev->current_timings.left_margin);
-		osd_device->ops.set_top_margin(osd_device,
-		vpbe_dev->current_timings.upper_margin);
-		vpbe_dev->current_sd_index = sd_index;
-		vpbe_dev->current_out_index = index;
+		ret = v4l2_subdev_call(vpbe_dev->encoders[sd_index],
+				       core, ioctl, VENC_CONFIGURE,
+				       &vpbe_dev->current_timings);
+		if (!ret) {
+			osd_device->ops.set_left_margin(osd_device,
+				vpbe_dev->current_timings.left_margin);
+			osd_device->ops.set_top_margin(osd_device,
+			vpbe_dev->current_timings.upper_margin);
+			vpbe_dev->current_sd_index = sd_index;
+			vpbe_dev->current_out_index = index;
+		}
 	}
 out:
 	mutex_unlock(&vpbe_dev->lock);
@@ -338,8 +350,6 @@ static int vpbe_s_dv_preset(struct vpbe_device *vpbe_dev,
 	struct vpbe_display_config *vpbe_config = vpbe_dev->cfg;
 	int sd_index = vpbe_dev->current_sd_index;
 	int out_index = vpbe_dev->current_out_index, ret;
-
-
 	if (!(vpbe_config->outputs[out_index].output.capabilities &
 	    V4L2_OUT_CAP_PRESETS))
 		return -EINVAL;
@@ -364,10 +374,14 @@ static int vpbe_s_dv_preset(struct vpbe_device *vpbe_dev,
 	}
 	/* set the lcd controller output for the given mode */
 	if (!ret) {
-		osd_device->ops.set_left_margin(osd_device,
-		vpbe_dev->current_timings.left_margin);
-		osd_device->ops.set_top_margin(osd_device,
-		vpbe_dev->current_timings.upper_margin);
+		ret = v4l2_subdev_call(vpbe_dev->venc, core, ioctl,
+				VENC_CONFIGURE, &vpbe_dev->current_timings);
+		if (!ret) {
+			osd_device->ops.set_left_margin(osd_device,
+			vpbe_dev->current_timings.left_margin);
+			osd_device->ops.set_top_margin(osd_device,
+			vpbe_dev->current_timings.upper_margin);
+		}
 	}
 	mutex_unlock(&vpbe_dev->lock);
 	return ret;
@@ -448,10 +462,14 @@ static int vpbe_s_std(struct vpbe_device *vpbe_dev, v4l2_std_id *std_id)
 			       s_std_output, *std_id);
 	/* set the lcd controller output for the given mode */
 	if (!ret) {
-		osd_device->ops.set_left_margin(osd_device,
-		vpbe_dev->current_timings.left_margin);
-		osd_device->ops.set_top_margin(osd_device,
-		vpbe_dev->current_timings.upper_margin);
+		ret = v4l2_subdev_call(vpbe_dev->venc, core, ioctl,
+				VENC_CONFIGURE, &vpbe_dev->current_timings);
+		if (!ret) {
+			osd_device->ops.set_left_margin(osd_device,
+			vpbe_dev->current_timings.left_margin);
+			osd_device->ops.set_top_margin(osd_device,
+			vpbe_dev->current_timings.upper_margin);
+		}
 	}
 	mutex_unlock(&vpbe_dev->lock);
 	return ret;
@@ -488,7 +506,6 @@ static int vpbe_set_mode(struct vpbe_device *vpbe_dev,
 	int out_index = vpbe_dev->current_out_index, ret = 0, i;
 	struct vpbe_enc_mode_info *preset_mode = NULL;
 	struct v4l2_dv_preset dv_preset;
-
 	if ((NULL == mode_info) || (NULL == mode_info->name))
 		return -EINVAL;
 
@@ -516,7 +533,8 @@ static int vpbe_set_mode(struct vpbe_device *vpbe_dev,
 		return -EINVAL;
 
 	mutex_lock(&vpbe_dev->lock);
-
+	ret = v4l2_subdev_call(vpbe_dev->venc, core, ioctl,
+			       VENC_CONFIGURE, preset_mode);
 	if (!ret) {
 		vpbe_dev->current_timings = *preset_mode;
 		osd_device->ops.set_left_margin(osd_device,
@@ -721,8 +739,8 @@ static int vpbe_initialize(struct device *dev, struct vpbe_device *vpbe_dev)
 	vpbe_dev->current_out_index = 0;
 	output_index = 0;
 
-/*	venc_device->setup_if_config(
-		vpbe_dev->cfg->outputs[output_index].if_params);*/
+	venc_device->setup_if_config(
+		vpbe_dev->cfg->outputs[output_index].if_params);
 	mutex_unlock(&vpbe_dev->lock);
 
 	printk(KERN_NOTICE "Setting default output to %s\n", def_output);
