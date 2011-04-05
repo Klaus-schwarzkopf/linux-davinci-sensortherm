@@ -26,6 +26,8 @@
 #ifndef _TVP7002_H_
 #define _TVP7002_H_
 
+#define TVP7002_MODULE_NAME "tvp7002"
+
 /* Platform-dependent data
  *
  * clk_polarity:
@@ -46,7 +48,7 @@
  *			     field (field 0).
  *			1 -> operation with polarity inverted.
  */
-struct tvp7002_config {
+struct tvp7002_platform_data {
 	u8 clk_polarity;
 	u8 hs_polarity;
 	u8 vs_polarity;

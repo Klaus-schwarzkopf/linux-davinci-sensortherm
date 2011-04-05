@@ -38,9 +38,6 @@ MODULE_DESCRIPTION("TI TVP7002 Video and Graphics Digitizer driver");
 MODULE_AUTHOR("Santiago Nunez-Corrales <santiago.nunez@ridgerun.com>");
 MODULE_LICENSE("GPL");
 
-/* Module Name */
-#define TVP7002_MODULE_NAME	"tvp7002"
-
 /* I2C retry attempts */
 #define I2C_RETRY_COUNT		(5)
 
@@ -421,13 +418,17 @@ static const struct tvp7002_preset_definition tvp7002_presets[] = {
 /* Device definition */
 struct tvp7002 {
 	struct v4l2_subdev sd;
-	const struct tvp7002_config *pdata;
+	const struct tvp7002_platform_data *pdata;
 
 	int ver;
 	int streaming;
 
 	const struct tvp7002_preset_definition *current_preset;
 	u8 gain;
+
+	/* mc related members */
+	struct media_pad pad;
+	struct v4l2_mbus_framefmt format;
 };
 
 /*
@@ -946,6 +947,110 @@ static int tvp7002_enum_dv_presets(struct v4l2_subdev *sd,
 	return v4l_fill_dv_preset_info(tvp7002_presets[preset->index].preset, preset);
 }
 
+/*
+ * tvp7002_enum_mbus_code() - Enum supported digital video format on pad
+  * @sd: pointer to standard V4L2 sub-device structure
+ * @fh: file handle for the subdev
+ * @code: pointer to subdev enum mbus code struct
+ *
+ * Enumerate supported digital video formats for pad.
+ */
+static int tvp7002_enum_mbus_code(struct v4l2_subdev *sd,
+				  struct v4l2_subdev_fh *fh,
+				  struct v4l2_subdev_mbus_code_enum *code)
+{
+	/* Check pad index is valid */
+	if (code->pad != 0)
+		return -EINVAL;
+
+	/* Check requested format index is within range */
+	if (code->index != 0)
+		return -EINVAL;
+
+	code->code = V4L2_MBUS_FMT_YUYV10_1X20;
+
+	return 0;
+}
+
+/*
+ * tvp7002_set_pad_format() - set video format on pad
+ * @sd: pointer to standard V4L2 sub-device structure
+ * @fh: file handle for the subdev
+ * @fmt: pointer to subdev format struct
+ *
+ * set video format for pad.
+ */
+static int tvp7002_set_pad_format(struct v4l2_subdev *sd,
+				  struct v4l2_subdev_fh *fh,
+				  struct v4l2_subdev_format *fmt)
+{
+	struct tvp7002 *device = to_tvp7002(sd);
+	struct v4l2_dv_enum_preset e_preset;
+	int error;
+
+	/* Check pad index is valid */
+	if (fmt->pad != 0)
+		return -EINVAL;
+
+	/* Calculate height and width based on current standard */
+	error = v4l_fill_dv_preset_info(device->current_preset->preset,
+					&e_preset);
+	if (error)
+		return error;
+
+	fmt->format.code = V4L2_MBUS_FMT_YUYV10_1X20;
+	fmt->format.width = e_preset.width;
+	fmt->format.height = e_preset.height;
+	fmt->format.field = device->current_preset->scanmode;
+	fmt->format.colorspace = device->current_preset->color_space;
+
+	/* store for future use */
+	device->format = fmt->format;
+
+	return 0;
+}
+
+/*
+ * tvp7002_get_pad_format() - get video format on pad
+ * @sd: pointer to standard V4L2 sub-device structure
+ * @fh: file handle for the subdev
+ * @fmt: pointer to subdev format struct
+ *
+ * get video format for pad.
+ */
+static int tvp7002_get_pad_format(struct v4l2_subdev *sd,
+				  struct v4l2_subdev_fh *fh,
+				  struct v4l2_subdev_format *fmt)
+{
+	struct tvp7002 *device = to_tvp7002(sd);
+	__u32 which = fmt->which;
+
+	/* Check pad index is valid */
+	if (fmt->pad != 0)
+		return -EINVAL;
+
+	if (which == V4L2_SUBDEV_FORMAT_ACTIVE)
+		fmt->format = device->format;
+	else {
+		struct v4l2_dv_enum_preset e_preset;
+		int error;
+
+		/* Calculate height and width based on current standard */
+		error = v4l_fill_dv_preset_info(device->current_preset->preset,
+						&e_preset);
+		if (error)
+			return error;
+
+		fmt->format.code = V4L2_MBUS_FMT_YUYV10_1X20;
+		fmt->format.width = e_preset.width;
+		fmt->format.height = e_preset.height;
+		fmt->format.field = device->current_preset->scanmode;
+		fmt->format.colorspace = device->current_preset->color_space;
+	}
+
+	return 0;
+}
+
 /* V4L2 core operation handlers */
 static const struct v4l2_subdev_core_ops tvp7002_core_ops = {
 	.g_chip_ident = tvp7002_g_chip_ident,
@@ -971,10 +1076,18 @@ static const struct v4l2_subdev_video_ops tvp7002_video_ops = {
 	.enum_mbus_fmt = tvp7002_enum_mbus_fmt,
 };
 
+/* media pad related operation handlers */
+static const struct v4l2_subdev_pad_ops tvp7002_pad_ops = {
+	.enum_mbus_code = tvp7002_enum_mbus_code,
+	.get_fmt = tvp7002_get_pad_format,
+	.set_fmt = tvp7002_set_pad_format,
+};
+
 /* V4L2 top level operation handlers */
 static const struct v4l2_subdev_ops tvp7002_ops = {
 	.core = &tvp7002_core_ops,
 	.video = &tvp7002_video_ops,
+	.pad = &tvp7002_pad_ops,
 };
 
 static struct tvp7002 tvp7002_dev = {
@@ -1024,6 +1137,7 @@ static int tvp7002_probe(struct i2c_client *c, const struct i2c_device_id *id)
 
 	/* Tell v4l2 the device is ready */
 	v4l2_i2c_subdev_init(sd, c, &tvp7002_ops);
+	strlcpy(sd->name, TVP7002_MODULE_NAME, sizeof(sd->name));
 	v4l_info(c, "tvp7002 found @ 0x%02x (%s)\n",
 					c->addr, c->adapter->name);
 
@@ -1060,6 +1174,16 @@ static int tvp7002_probe(struct i2c_client *c, const struct i2c_device_id *id)
 	preset.preset = device->current_preset->preset;
 	error = tvp7002_s_dv_preset(sd, &preset);
 
+#if defined(CONFIG_MEDIA_CONTROLLER)
+	device->pad.flags = MEDIA_PAD_FL_OUTPUT;
+	device->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
+	device->sd.entity.flags |= MEDIA_ENT_T_V4L2_SUBDEV_DECODER;
+
+	error = media_entity_init(&device->sd.entity, 1, &device->pad, 0);
+	if (error < 0)
+		goto found_error;
+#endif
+
 found_error:
 	if (error < 0)
 		kfree(device);
@@ -1081,6 +1205,10 @@ static int tvp7002_remove(struct i2c_client *c)
 
 	v4l2_dbg(1, debug, sd, "Removing tvp7002 adapter"
 				"on address 0x%x\n", c->addr);
+
+#if defined(CONFIG_MEDIA_CONTROLLER)
+	media_entity_cleanup(&device->sd.entity);
+#endif
 
 	v4l2_device_unregister_subdev(sd);
 	kfree(device);
