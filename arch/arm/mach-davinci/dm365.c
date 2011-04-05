@@ -1,17 +1,17 @@
 /*
- * TI DaVinci DM365 chip specific setup
- *
- * Copyright (C) 2009 Texas Instruments
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation version 2.
- *
- * This program is distributed "as is" WITHOUT ANY WARRANTY of any
- * kind, whether express or implied; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+* TI DaVinci DM365 chip specific setup
+*
+* Copyright (C) 2009 Texas Instruments
+*
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License as
+* published by the Free Software Foundation version 2.
+*
+* This program is distributed "as is" WITHOUT ANY WARRANTY of any
+* kind, whether express or implied; without even the implied warranty
+* of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 #include <linux/init.h>
 #include <linux/clk.h>
 #include <linux/serial_8250.h>
@@ -1150,6 +1150,30 @@ static struct resource dm365_vpss_resources[] = {
 	},
 };
 
+/* IPIPEIF device configuration */
+static u64 dm365_ipipeif_dma_mask = DMA_BIT_MASK(32);
+static struct resource dm365_ipipeif_resources[] = {
+	{
+		.start          = 0x01C71200,
+		.end            = 0x01C71200 + 0x60,
+		.flags          = IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device dm365_ipipeif_dev = {
+	.name           = "dm3xx_ipipeif",
+	.id             = -1,
+	.num_resources  = ARRAY_SIZE(dm365_ipipeif_resources),
+	.resource       = dm365_ipipeif_resources,
+	.dev = {
+		.dma_mask               = &dm365_ipipeif_dma_mask,
+		.coherent_dma_mask      = DMA_BIT_MASK(32),
+		/* For IPIPEIF device type. 1 - DM365 */
+		.platform_data          = (void *)1,
+	},
+};
+
+
 static struct platform_device dm365_vpss_device = {
 	.name			= "vpss",
 	.id			= -1,
@@ -1169,17 +1193,28 @@ static struct resource vpfe_resources[] = {
 		.end            = IRQ_VDINT1,
 		.flags          = IORESOURCE_IRQ,
 	},
-};
-
-static u64 vpfe_capture_dma_mask = DMA_BIT_MASK(32);
-static struct platform_device vpfe_capture_dev = {
-	.name           = CAPTURE_DRV_NAME,
-	.id             = -1,
-	.num_resources  = ARRAY_SIZE(vpfe_resources),
-	.resource       = vpfe_resources,
-	.dev = {
-		.dma_mask               = &vpfe_capture_dma_mask,
-		.coherent_dma_mask      = DMA_BIT_MASK(32),
+	{
+		.start          = IRQ_PRVUINT,
+		.end            = IRQ_PRVUINT,
+		.flags          = IORESOURCE_IRQ,
+	},
+	/*ISIF/CCDC Base address */
+	{
+		.start          = 0x01c71000,
+		.end            = 0x01c71000 + 0x1ff,
+		.flags          = IORESOURCE_MEM,
+	},
+	/* ISIF/CCDC Linearization table 0 */
+	{
+		.start          = 0x1C7C000,
+		.end            = 0x1C7C000 + 0x2ff,
+		.flags          = IORESOURCE_MEM,
+	},
+	/* ISIF/CCDC Linearization table 1 */
+	{
+		.start          = 0x1C7C400,
+		.end            = 0x1C7C400 + 0x2ff,
+		.flags          = IORESOURCE_MEM,
 	},
 };
 
@@ -1192,34 +1227,16 @@ static void dm365_isif_setup_pinmux(void)
 	davinci_cfg_reg(DM365_VIN_YIN0_3_EN);
 }
 
-static struct resource isif_resource[] = {
-	/* ISIF Base address */
-	{
-		.start          = 0x01c71000,
-		.end            = 0x01c71000 + 0x1ff,
-		.flags          = IORESOURCE_MEM,
-	},
-	/* ISIF Linearization table 0 */
-	{
-		.start          = 0x1C7C000,
-		.end            = 0x1C7C000 + 0x2ff,
-		.flags          = IORESOURCE_MEM,
-	},
-	/* ISIF Linearization table 1 */
-	{
-		.start          = 0x1C7C400,
-		.end            = 0x1C7C400 + 0x2ff,
-		.flags          = IORESOURCE_MEM,
-	},
-};
-static struct platform_device dm365_isif_dev = {
-	.name           = "isif",
+
+static u64 vpfe_capture_dma_mask = DMA_BIT_MASK(32);
+static struct platform_device vpfe_capture_dev = {
+	.name           = CAPTURE_DRV_NAME,
 	.id             = -1,
-	.num_resources  = ARRAY_SIZE(isif_resource),
-	.resource       = isif_resource,
+	.num_resources  = ARRAY_SIZE(vpfe_resources),
+	.resource       = vpfe_resources,
 	.dev = {
-		.dma_mask               = &vpfe_capture_dma_mask,
-		.coherent_dma_mask      = DMA_BIT_MASK(32),
+		.dma_mask		= &vpfe_capture_dma_mask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
 		.platform_data		= dm365_isif_setup_pinmux,
 	},
 };
@@ -1466,8 +1483,8 @@ void dm365_set_vpbe_display_config(struct vpbe_display_config *cfg)
 
 static struct platform_device *dm365_video_devices[] __initdata = {
 	&dm365_vpss_device,
-	&dm365_isif_dev,
 	&vpfe_capture_dev,
+	&dm365_ipipeif_dev,
 	&dm365_osd_dev,
 	&dm365_venc_dev,
 	&dm365_vpbe_dev,
@@ -1478,7 +1495,7 @@ static struct platform_device *dm365_video_devices[] __initdata = {
 static int __init dm365_init_video(void)
 {
 	/* Add isif clock alias */
-	clk_add_alias("master", dm365_isif_dev.name, "vpss_master", NULL);
+	clk_add_alias("master", vpfe_capture_dev.name, "vpss_master", NULL);
 	vpss_clkctl_reg = DAVINCI_SYSMODULE_VIRT(0x44);
 	venc_vmod_reg = DAVINCI_SYSMODULE_VIRT(0x32400);
 	platform_add_devices(dm365_video_devices,
