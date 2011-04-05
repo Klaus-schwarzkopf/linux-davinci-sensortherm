@@ -11,6 +11,27 @@ config DISPLAY_DAVINCI_DM646X_EVM
 	  To compile this driver as a module, choose M here: the
 	  module will be called vpif_display.
 
+config VIDEO_DM355_AF
+	tristate "DM355 Auto Focus Driver"
+	depends on ARCH_DAVINCI_DM355
+	default y
+	help
+	   Support for dm355 AF hardware.
+
+	   Auto Focus programming functions which are used to support
+	   control loop for Auto Focus. It collects metrics about the
+	   image or video data,
+
+config VIDEO_DM355_AEW
+	tristate "DM355 Auto exposure /White Balance Driver"
+	depends on ARCH_DAVINCI_DM355
+	help
+	  Support for dm355 hardware.
+
+	  DM355 Auto Exposure and Auto White Balance programming functions
+	  which are used to support the control loops for Auto Exposure and
+	  Auto White Balance. It collects metrics about the image or video data
+
 config VIDEO_DM365_3A_HW
 	tristate "DM365 Auto Focus, Auto Exposure/ White Balance HW module"
 	depends on ARCH_DAVINCI_DM365
@@ -131,6 +152,16 @@ config VIDEO_DM355_CCDC
 
 	   To compile this driver as a module, choose M here: the
 	   module will be called vpfe.
+
+config DM355_IPIPE
+	depends on ARCH_DAVINCI && ARCH_DAVINCI_DM355
+	tristate "DM355 IPIPE"
+	help
+	  dm355 IPIPE hw programming module.
+
+	  This is the hardware module that implements imp_hw_interface
+	  for DM355. This hardware module provides previewer and resizer
+	  configuration functionality for image processing.
 
 config VIDEO_ISIF
 	tristate "DM365 ISIF HW module"
