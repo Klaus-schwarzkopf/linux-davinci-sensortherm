@@ -98,3 +98,7 @@ obj-$(CONFIG_RAMOOPS)		+= ramoops.o
 
 obj-$(CONFIG_JS_RTC)		+= js-rtc.o
 js-rtc-y = rtc.o
+obj-$(CONFIG_ARCH_DAVINCI_DM644x)       += dm6446_imp.o
+
+davinci_rsz_driver-objs := davinci_resizer_hw.o davinci_resizer.o
+obj-$(CONFIG_RESIZER)   += davinci_rsz_driver.o

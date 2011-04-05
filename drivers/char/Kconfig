@@ -1136,6 +1136,17 @@ config DEVPORT
 
 source "drivers/s390/char/Kconfig"
 
+config RESIZER
+	tristate "DaVinci Resizer Driver"
+	default n
+	depends on ARCH_DAVINCI_DM644x
+	help
+	  Resizer Driver for dm644x.
+
+	  This driver helps user configure Resizer in a single shot mode
+	  only for dm644x. Various private ioctls help user to configure
+	  resizer, allocate memory for buffers etc.
+
 config RAMOOPS
 	tristate "Log panic/oops to a RAM buffer"
 	depends on HAS_IOMEM
