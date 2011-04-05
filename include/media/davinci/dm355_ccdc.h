@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2005-2009 Texas Instruments Inc
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- */
+* Copyright (C) 2005-2009 Texas Instruments Inc
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
 #ifndef _DM355_CCDC_H
 #define _DM355_CCDC_H
 #include <media/davinci/ccdc_types.h>
@@ -71,16 +71,6 @@ enum ccdc_datasft {
 	CCDC_DATA_SHIFT_6BIT
 };
 
-enum ccdc_data_size {
-	CCDC_DATA_16BITS,
-	CCDC_DATA_15BITS,
-	CCDC_DATA_14BITS,
-	CCDC_DATA_13BITS,
-	CCDC_DATA_12BITS,
-	CCDC_DATA_11BITS,
-	CCDC_DATA_10BITS,
-	CCDC_DATA_8BITS
-};
 enum ccdc_mfilt1 {
 	CCDC_NO_MEDIAN_FILTER1,
 	CCDC_AVERAGE_FILTER1,
@@ -103,8 +93,8 @@ struct ccdc_a_law {
 
 /* structure for Black Clamping */
 struct ccdc_black_clamp {
-	/* only if bClampEnable is TRUE */
-	unsigned char b_clamp_enable;
+	/* only if it is TRUE */
+	unsigned char enable;
 	/* only if bClampEnable is TRUE */
 	enum ccdc_sample_length sample_pixel;
 	/* only if bClampEnable is TRUE */
@@ -222,8 +212,6 @@ struct ccdc_data_offset {
 struct ccdc_config_params_raw {
 	/* data shift to be applied before storing */
 	enum ccdc_datasft datasft;
-	/* data size value from 8 to 16 bits */
-	enum ccdc_data_size data_sz;
 	/* median filter for sdram */
 	enum ccdc_mfilt1 mfilt1;
 	enum ccdc_mfilt2 mfilt2;
@@ -254,7 +242,7 @@ struct ccdc_config_params_raw {
 #ifdef __KERNEL__
 #include <linux/io.h>
 
-#define CCDC_WIN_PAL	{0, 0, 720, 576}
+#define CCDC_WIN_NTSC	{0, 0, 720, 480}
 #define CCDC_WIN_VGA	{0, 0, 640, 480}
 
 struct ccdc_params_ycbcr {
