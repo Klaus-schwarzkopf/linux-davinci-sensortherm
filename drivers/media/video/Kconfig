@@ -475,6 +475,16 @@ config VIDEO_THS7303
 	  To compile this driver as a module, choose M here: the
 	  module will be called ths7303.
 
+config VIDEO_THS7353
+	tristate "THS7353 Video Amplifier"
+	depends on I2C
+	help
+	  Support for TI THS7353 video amplifier
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called ths7353. This helps tvp7002 to amplify
+	  the signals.
+
 config VIDEO_ADV7343
 	tristate "ADV7343 video encoder"
 	depends on I2C
@@ -770,6 +780,15 @@ config SOC_CAMERA_MT9V022
 	select GPIO_PCA953X if MT9V022_PCA9536_SWITCH
 	help
 	  This driver supports MT9V022 cameras from Micron
+
+config SOC_CAMERA_MT9P031
+	tristate "mt9p031 support"
+	depends on I2C
+	help
+	  This driver supports MT9P031 cameras from Micron. Driver
+	  supports RAW bayer format, has media controller support,
+	  but it has backward compatibility also. It support maximum
+	  width 2048 and maxmum width 1536.
 
 config SOC_CAMERA_RJ54N1
 	tristate "rj54n1cb0c support"
