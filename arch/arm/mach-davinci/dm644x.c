@@ -838,6 +838,15 @@ static struct platform_device dm644x_vpbe_display = {
 	},
 };
 
+static struct platform_device dm644x_vpbe_fb_display = {
+	.name		= "vpbe-fb",
+	.id		= -1,
+	.dev		= {
+		.dma_mask		= &dm644x_video_dma_mask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
+	},
+};
+
 struct venc_platform_data dm644x_venc_pdata = {
 	.venc_type		= DM644X_VPBE,
 	.setup_pinmux		= dm644x_vpbe_setup_pinmux,
@@ -1008,6 +1017,7 @@ static struct platform_device *dm644x_video_devices[] __initdata = {
 	&dm644x_venc_dev,
 	&dm644x_vpbe_dev,
 	&dm644x_vpbe_display,
+	&dm644x_vpbe_fb_display,
 };
 
 static int __init dm644x_init_video(void)
