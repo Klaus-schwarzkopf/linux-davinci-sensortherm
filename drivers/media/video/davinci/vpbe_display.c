@@ -245,6 +245,7 @@ static irqreturn_t venc_isr(int irq, void *arg)
 {
 	static unsigned last_event;
 	unsigned event = 0;
+	int ret = 0;
 
 	if (venc_is_second_field())
 		event |= VENC_SECOND_FIELD;
@@ -267,6 +268,17 @@ static irqreturn_t venc_isr(int irq, void *arg)
 	last_event = event;
 
 	vpbe_display_isr(event, arg);
+
+	ret = v4l2_subdev_call(vpbe_dev->venc,
+			core,
+			ioctl,
+			VENC_INTERRUPT,
+			&event);
+	if (ret < 0) {
+		v4l2_err(&vpbe_dev->v4l2_dev,
+			 "Error in getting Field ID 0\n");
+	}
+
 	return IRQ_HANDLED;
 }
 

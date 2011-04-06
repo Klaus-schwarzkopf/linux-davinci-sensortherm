@@ -26,6 +26,24 @@
 #define VENC_FIRST_FIELD	BIT(1)
 #define VENC_SECOND_FIELD	BIT(2)
 
+/**
+ * struct venc_callback
+ * @next: used internally by the venc driver to maintain a linked list of
+ *        callbacks
+ * @mask: a bitmask specifying the venc event(s) for which the
+ *        callback will be invoked
+ * @handler: the callback routine
+ * @arg: a null pointer that is passed as the second argument to the callback
+ *       routine
+ */
+struct venc_callback {
+	struct venc_callback *next;
+	char *owner;
+	unsigned mask;
+	void (*handler) (unsigned event, void *arg);
+	void *arg;
+};
+
 struct venc_platform_data {
 	enum vpbe_types venc_type;
 	int (*setup_pinmux)(enum v4l2_mbus_pixelcode if_type,
@@ -41,6 +59,9 @@ struct venc_platform_data {
 
 enum venc_ioctls {
 	VENC_GET_FLD = 1,
+	VENC_REG_CALLBACK,
+	VENC_UNREG_CALLBACK,
+	VENC_INTERRUPT,
 };
 
 #endif

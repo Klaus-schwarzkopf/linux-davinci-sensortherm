@@ -36,6 +36,7 @@
 #include <media/davinci/vpbe_venc.h>
 #include <media/davinci/vpss.h>
 #include <media/v4l2-device.h>
+#include <media/v4l2-mediabus.h>
 
 #include "vpbe_venc_regs.h"
 
@@ -416,6 +417,7 @@ static int venc_set_prgb(struct v4l2_subdev *sd,
 	venc_write(sd, VENC_LCDOUT, 0x1);
 	return 0;
 }
+
 /*
  * venc_set_720p60_external
  *
@@ -829,11 +831,51 @@ static long venc_ioctl(struct v4l2_subdev *sd,
 			void *arg)
 {
 	u32 val;
+	struct venc_callback *next, *prev, *callback;
+	struct venc_state *venc = to_state(sd);
+	unsigned long flags;
+	unsigned event = 0;
+
 	switch (cmd) {
 	case VENC_GET_FLD:
 		val = venc_read(sd, VENC_VSTAT);
 		*((int *)arg) = ((val & VENC_VSTAT_FIDST) ==
 		VENC_VSTAT_FIDST);
+		break;
+	case VENC_REG_CALLBACK:
+		spin_lock_irqsave(&venc->lock, flags);
+		callback = (struct venc_callback *)arg;
+		next = venc->callback;
+		venc->callback = callback;
+		callback->next = next;
+		spin_unlock_irqrestore(&venc->lock, flags);
+		break;
+	case VENC_UNREG_CALLBACK:
+		spin_lock_irqsave(&venc->lock, flags);
+		callback = (struct venc_callback *)arg;
+		prev = venc->callback;
+		if (!prev)
+			return -EINVAL;
+		else if (prev == callback)
+			venc->callback = callback->next;
+		else {
+			while (prev->next && (prev->next != callback))
+				prev = prev->next;
+			if (!prev->next)
+				return -EINVAL;
+			else
+				prev->next = callback->next;
+		}
+		spin_unlock_irqrestore(&venc->lock, flags);
+		break;
+	case VENC_INTERRUPT:
+		callback = venc->callback;
+		event = *((unsigned *)arg);
+		while (callback) {
+			if (callback->mask & event)
+				callback->handler(event, callback->arg);
+		callback = callback->next;
+		}
 		break;
 	default:
 		v4l2_err(sd, "Wrong IOCTL cmd\n");
