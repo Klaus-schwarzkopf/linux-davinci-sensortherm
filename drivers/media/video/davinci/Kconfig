@@ -113,3 +113,16 @@ config VIDEO_VPBE_DISPLAY
 
 	    To compile this driver as a module, choose M here: the
 	    module will be called vpbe_display.
+
+config VIDEO_VPBE_FB
+	tristate "VPBE Framebuffer driver"
+	depends on FB && ARCH_DAVINCI
+	select VIDEO_DMXXX_VPBE
+	select FB_CFB_FILLRECT
+	select FB_CFB_COPYAREA
+	select FB_CFB_IMAGEBLIT
+	default y
+	help
+		Enables VPBE Framebuffer driver on a DMXXX device
+		To compile this driver as a module, choose M here: the
+		 module will be called vpbe_fb.
