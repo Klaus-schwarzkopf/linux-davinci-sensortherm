@@ -582,6 +582,9 @@ MUX_CFG(DM365,	GPIO32,		4,   10,    3,	  0,	 false)
 MUX_CFG(DM365,	GPIO33,		4,   12,    3,	  0,	 false)
 MUX_CFG(DM365,	GPIO40,		4,   26,    3,	  0,	 false)
 MUX_CFG(DM365,	GPIO64_57,	2,   6,     1,	  0,	 false)
+MUX_CFG(DM365,	GPIO80,		1,   20,    3,	  1,	 false)
+MUX_CFG(DM365, GPIO82,		1,   17,    1,	  1,	 false)
+MUX_CFG(DM365, VCLK,		1,   22,    1,	  0,	 false)
 
 MUX_CFG(DM365,	VOUT_FIELD,	1,   18,    3,	  1,	 false)
 MUX_CFG(DM365,	VOUT_FIELD_G81,	1,   18,    3,	  0,	 false)
@@ -1348,7 +1351,7 @@ static int dm365_set_if_config(enum v4l2_mbus_pixelcode pixcode)
 		dm365_reg_modify(venc_vmod_reg, val, (7 << 12));
 		dm365_reg_modify(venc_ycctl_reg, 1, 1);
 		break;
-	case V4L2_MBUS_FMT_SGRBG8_1X8:
+	case V4L2_MBUS_FMT_RGB565_2X8_BE:
 		/*
 		 * This was VPBE_DIGITAL_IF_PRGB/SRGB. Replace
 		 * the enum accordingly when the right one gets
@@ -1368,9 +1371,8 @@ static int dm365_vpbe_setup_pinmux(enum v4l2_mbus_pixelcode if_type,
 			    int field)
 {
 	int ret = 0;
-
 	switch (if_type) {
-	case V4L2_MBUS_FMT_SGRBG8_1X8:
+	case V4L2_MBUS_FMT_RGB565_2X8_BE:
 		davinci_cfg_reg(DM365_VOUT_FIELD_G81);
 		davinci_cfg_reg(DM365_VOUT_COUTL_EN);
 		davinci_cfg_reg(DM365_VOUT_COUTH_EN);
@@ -1395,12 +1397,13 @@ static void __iomem *vpss_clkctl_reg;
 static int dm365_venc_setup_clock(enum vpbe_enc_timings_type type, __u64 mode)
 {
 	int ret = 0;
-
 	switch (type) {
 	case VPBE_ENC_STD:
 		vpss_enable_clock(VPSS_VENC_CLOCK_SEL, 1);
 		vpss_enable_clock(VPSS_VPBE_CLOCK, 1);
 		__raw_writel(0x18, vpss_clkctl_reg);
+		if (cpu_is_davinci_dm368())
+			__raw_writel(0x38, vpss_clkctl_reg);
 		break;
 	case VPBE_ENC_DV_PRESET:
 		switch ((unsigned int)mode) {
@@ -1410,17 +1413,29 @@ static int dm365_venc_setup_clock(enum vpbe_enc_timings_type type, __u64 mode)
 		case V4L2_DV_1080I30:
 			/* set sysclk4 to output 74.25 MHz from pll1 */
 			__raw_writel(0x38, vpss_clkctl_reg);
+			if (cpu_is_davinci_dm368()) {
+				enable_hd_clk();
+				__raw_writel(0x3a, vpss_clkctl_reg);
+			}
 			break;
 		/* For LCD and EDTV cases */
 		case V4L2_DV_480P59_94:
 		case V4L2_DV_576P50:
-		vpss_enable_clock(VPSS_VENC_CLOCK_SEL, 1);
+			vpss_enable_clock(VPSS_VENC_CLOCK_SEL, 1);
 			vpss_enable_clock(VPSS_VPBE_CLOCK, 1);
 			__raw_writel(0x18, vpss_clkctl_reg);
 			break;
 		default:
 			ret  = -EINVAL;
 		}
+		break;
+	case VPBE_ENC_CUSTOM_TIMINGS:
+		vpss_enable_clock(VPSS_VENC_CLOCK_SEL, 1);
+		vpss_enable_clock(VPSS_VPBE_CLOCK, 1);
+		__raw_writel(0x18, vpss_clkctl_reg);
+		if (cpu_is_davinci_dm368())
+			enable_hd_clk();
+			__raw_writel(0x3a, vpss_clkctl_reg);
 		break;
 	default:
 		ret = -EINVAL;
@@ -1453,6 +1468,7 @@ struct venc_platform_data dm365_venc_pdata = {
 	.setup_pinmux		= dm365_vpbe_setup_pinmux,
 	.setup_clock		= dm365_venc_setup_clock,
 	.setup_if_config	= dm365_set_if_config,
+	.num_lcd_outputs	= 1,
 };
 
 static struct platform_device dm365_venc_dev = {

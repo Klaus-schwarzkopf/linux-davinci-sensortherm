@@ -41,6 +41,7 @@
 #include <mach/mmc.h>
 #include <mach/nand.h>
 #include <mach/gpio.h>
+#include <mach/cputype.h>
 #include <mach/keyscan.h>
 
 #include <media/tvp514x.h>
@@ -635,7 +636,6 @@ static int dm365evm_setup_video_input(enum vpfe_subdev_id id)
 		return 0;
 	}
 	__raw_writeb(mux, cpld + CPLD_MUX);
-
 	__raw_writeb(resets, cpld + CPLD_RESETS);
 
 	pr_info("EVM: switch to %s video input\n", label);
@@ -763,6 +763,27 @@ static struct vpbe_enc_mode_info vbpe_enc_preset_timings[] = {
 	},
 };
 
+/* custom timings */
+static struct vpbe_enc_mode_info vbpe_enc_custom_timings[] = {
+	{
+		.name		= "272p60",
+		.timings_type	= VPBE_ENC_CUSTOM_TIMINGS,
+		.timings	= {CUSTOM_TIMING_480_272},
+		.interlaced	= 0,
+		.xres		= 480,
+		.yres		= 272,
+		.aspect		= {1, 1},
+		.fps		= {60, 1},
+		.left_margin	= 43,
+		.right_margin	= 43,
+		.upper_margin	= 12,
+		.lower_margin	= 12,
+		.hsync_len	= 42,
+		.vsync_len	= 10,
+		.flags		= 0
+	},
+};
+
 /*
  * The outputs available from VPBE + ecnoders. Keep the
  * the order same as that of encoders. First those from venc followed by that
@@ -797,6 +818,19 @@ static struct vpbe_output dm365_vpbe_outputs[] = {
 		.num_modes	= ARRAY_SIZE(vbpe_enc_preset_timings),
 		.modes		= vbpe_enc_preset_timings,
 		.if_params	= V4L2_MBUS_FMT_FIXED,
+	},
+	{
+		.output         = {
+			.index          = 2,
+			.name           = "Lcdout",
+			.type           = V4L2_OUTPUT_TYPE_MODULATOR,
+			.capabilities   = V4L2_OUT_CAP_CUSTOM_TIMINGS,
+		},
+		.subdev_name    = VPBE_VENC_SUBDEV_NAME,
+		.default_mode   = "272p60",
+		.num_modes      = ARRAY_SIZE(vbpe_enc_custom_timings),
+		.modes          = vbpe_enc_custom_timings,
+		.if_params      = V4L2_MBUS_FMT_RGB565_2X8_BE,
 	},
 };
 
@@ -950,6 +984,8 @@ fail:
 
 	/* External muxing for some signals */
 	mux = 0;
+	/* Read CPLD version number */
+	soc_info->cpld_version = __raw_readb(cpld + CPLD_VERSION);
 
 	/* Read SW5 to set up NAND + keypad _or_ OneNAND (sync read).
 	 * NOTE:  SW4 bus width setting must match!
@@ -985,7 +1021,8 @@ fail:
 	if (have_imager()) {
 		label = "HD imager";
 		mux |= CPLD_VIDEO_INPUT_MUX_IMAGER;
-
+		/* externally mux MMC1 to imager */
+		mux |= BIT(6);
 		dm365evm_reset_imager(1);
 	} else {
 		/* we can use MMC1 ... */
@@ -1004,10 +1041,39 @@ fail:
 	}
 	__raw_writeb(mux, cpld + CPLD_MUX);
 	__raw_writeb(resets, cpld + CPLD_RESETS);
+
 	pr_info("EVM: %s video input\n", label);
 
 	/* REVISIT export switches: NTSC/PAL (SW5.6), EXTRA1 (SW5.2), etc */
 }
+
+void enable_lcd(void)
+{
+	/* Turn on LCD backlight for DM368 */
+	if (cpu_is_davinci_dm368()) {
+		/* Configure 9.25MHz clock to LCD */
+		__raw_writeb(0x80, cpld + CPLD_RESETS);
+
+		/* CPLD_CONN_GIO17 is level high */
+		__raw_writeb(0xff, cpld + CPLD_CCD_IO1);
+
+		/* CPLD_CONN_GIO17 is an output */
+		__raw_writeb(0xfb, cpld + CPLD_CCD_DIR1);
+	}
+}
+EXPORT_SYMBOL(enable_lcd);
+
+void enable_hd_clk(void)
+{
+	u8 resets;
+	resets = __raw_readb(cpld + CPLD_RESETS);
+	if (cpu_is_davinci_dm368()) {
+		davinci_cfg_reg(DM365_GPIO80);
+		resets |= BIT(7) | BIT(6) | BIT(5);
+	}
+	__raw_writeb(resets, cpld + CPLD_RESETS);
+}
+EXPORT_SYMBOL(enable_hd_clk);
 
 static struct davinci_uart_config uart_config __initdata = {
 	.enabled_uarts = (1 << 0),
@@ -1052,7 +1118,6 @@ static __init void dm365_evm_init(void)
 	davinci_serial_init(&uart_config);
 
 	dm365evm_emac_configure();
-	dm365evm_mmc_configure();
 
 	davinci_setup_mmc(0, &dm365evm_mmc_config);
 
