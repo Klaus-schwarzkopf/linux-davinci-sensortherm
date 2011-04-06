@@ -859,6 +859,14 @@ static struct vpbe_display_config vpbe_display_cfg = {
 	.outputs	= dm365_vpbe_outputs,
 };
 
+static void dm365evm_usb_configure(void)
+{
+	davinci_cfg_reg(DM365_GPIO33);
+	gpio_request(33, "usb");
+	gpio_direction_output(33, 1);
+	davinci_setup_usb(500, 8);
+}
+
 static void __init evm_init_i2c(void)
 {
 	davinci_init_i2c(&i2c_pdata);
@@ -1138,6 +1146,7 @@ static __init void dm365_evm_init(void)
 			ARRAY_SIZE(dm365_evm_spi_info));
 
 	dm365_init_tsc2004();
+	dm365evm_usb_configure();
 }
 
 MACHINE_START(DAVINCI_DM365_EVM, "DaVinci DM365 EVM")
