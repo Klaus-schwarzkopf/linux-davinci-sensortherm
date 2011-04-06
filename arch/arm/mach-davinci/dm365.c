@@ -1422,6 +1422,15 @@ static struct platform_device dm365_vpbe_v4l2_display = {
 	},
 };
 
+static struct platform_device dm365_vpbe_fb_display = {
+	.name		= "vpbe-fb",
+	.id		= -1,
+	.dev		= {
+		.dma_mask		= &dm365_video_dma_mask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
+	},
+};
+
 struct venc_platform_data dm365_venc_pdata = {
 	.venc_type		= DM365_VPBE,
 	.setup_pinmux		= dm365_vpbe_setup_pinmux,
@@ -1463,6 +1472,7 @@ static struct platform_device *dm365_video_devices[] __initdata = {
 	&dm365_venc_dev,
 	&dm365_vpbe_dev,
 	&dm365_vpbe_v4l2_display,
+	&dm365_vpbe_fb_display,
 };
 
 static int __init dm365_init_video(void)
