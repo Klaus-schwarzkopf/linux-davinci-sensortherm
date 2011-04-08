@@ -54,4 +54,5 @@ void dm365_init_spi0(unsigned chipselect_mask,
 
 void dm365_set_vpfe_config(struct vpfe_config *cfg);
 void dm365_set_vpbe_display_config(struct vpbe_display_config *cfg);
+void __init davinci_setup_usb(unsigned mA, unsigned potpgt_ms);
 #endif /* __ASM_ARCH_DM365_H */
