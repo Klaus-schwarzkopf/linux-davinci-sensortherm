@@ -1149,7 +1149,7 @@ static __init void dm365_evm_init(void)
 	dm365evm_usb_configure();
 }
 
-MACHINE_START(DAVINCI_DM365_EVM, "DaVinci DM365 EVM")
+MACHINE_START(DAVINCI_DM365_EVM, "DaVinci DM36x EVM")
 	.boot_params	= (0x80000100),
 	.map_io		= dm365_evm_map_io,
 	.init_irq	= davinci_irq_init,
