@@ -123,7 +123,6 @@ struct cppi41 {
 };
 
 extern struct usb_cppi41_info usb_cppi41_info;
-EXPORT_SYMBOL(usb_cppi41_info);
 
 #ifdef DEBUG_CPPI_TD
 static void print_pd_list(struct usb_pkt_desc *pd_pool_head)
