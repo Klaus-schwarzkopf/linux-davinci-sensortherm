@@ -913,7 +913,7 @@ static int vpif_reqbufs(struct file *file, void *priv,
 
 	/* Initialize videobuf queue as per the buffer type */
 	videobuf_queue_dma_contig_init(&common->buffer_queue,
-					    &video_qops, NULL,
+					    &video_qops, vpif_dev,
 					    &common->irqlock,
 					    reqbuf->type,
 					    common->fmt.fmt.pix.field,
