@@ -653,27 +653,62 @@ static int ipipe_update_outbuf2_address(void *config, unsigned int address)
 
 static void ipipe_enable(unsigned char en, void *config)
 {
-	unsigned char val = 0;
+	unsigned char val = 0, ret = 0;
 	struct ipipe_params *param = (struct ipipe_params *)config;
 
 	if (en)
 		val = 1;
 	if (oper_mode == IMP_MODE_CONTINUOUS)
 		param = oper_state.shared_config_param;
-	if (param->rsz_common.source == IPIPE_DATA)
+
+	if (en && param->rsz_common.source == IPIPE_DATA) {
+		/* wait for IPIPE to become inactive */
+		do {
+			ret = regr_ip(IPIPE_SRC_EN);
+		}while (ret);
+
 		regw_ip(val, IPIPE_SRC_EN);
+	}
 	else
 		regw_ip(0, IPIPE_SRC_EN);
-	if (param->rsz_en[RSZ_A])
-		rsz_enable(RSZ_A, en);
-	if (param->rsz_en[RSZ_B])
-		rsz_enable(RSZ_B, en);
-	if (oper_mode == IMP_MODE_SINGLE_SHOT)
-		ipipeif_set_enable(val, oper_mode);
 
-	/* dump registers */
-	if (en)
-		ipipe_dump_hw_config();
+	if (en) {
+		/* wait for RSZ_SRC_EN to be reset by hardware */
+		do {
+			ret = regr_rsz(RSZ_SRC_EN);
+		} while (ret);
+	}
+
+	if (param->rsz_en[RSZ_A]) {
+		if (en) {
+			/* wait for RSZ-A to become inactive */
+			do {
+				ret = regr_rsz(RSZ_A);
+			}while (ret);
+		}
+
+		rsz_enable(RSZ_A, en);
+	}
+	if (param->rsz_en[RSZ_B]) {
+		if (en) {
+			/* wait for RSZ-B to become inactive */
+			do {
+				ret = regr_rsz(RSZ_B);
+			}while (ret);
+		}
+
+		rsz_enable(RSZ_B, en);
+	}
+	if (oper_mode == IMP_MODE_SINGLE_SHOT) {
+		/* what for IPIPEIF ENABLE.ENABLE to be reset by hardware */
+		if (en) {
+			do {
+				ret = ipipeif_get_enable();
+			} while(ret & 0x1);
+		}
+
+		ipipeif_set_enable(val, oper_mode);
+	}
 }
 
 static int validate_lutdpc_params(struct device *dev)

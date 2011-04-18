@@ -32,7 +32,6 @@ static void ipipe_clock_enable(void)
 	/* enable RSZ MMR for register write access */
 }
 
-
 #ifdef CONFIG_IMP_DEBUG
 void ipipe_hw_dump_config(void)
 {
@@ -437,7 +436,6 @@ int ipipe_hw_setup(struct ipipe_params *config)
 		/* enable ipipe mode to either one shot or continuous */
 		utemp = config->ipipe_mode;
 		regw_ip((utemp), IPIPE_SRC_MODE);
-		regw_ip(1, IPIPE_SRC_EN);
 		data_format = config->ipipe_dpaths_fmt;
 		regw_ip(data_format, IPIPE_SRC_FMT);
 		/* set size */
