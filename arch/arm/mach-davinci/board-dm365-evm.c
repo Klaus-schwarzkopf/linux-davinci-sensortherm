@@ -43,6 +43,7 @@
 #include <mach/gpio.h>
 #include <mach/cputype.h>
 #include <mach/keyscan.h>
+#include <mach/aemif.h>
 
 #include <media/tvp514x.h>
 #include <media/tvp7002.h>
@@ -161,6 +162,16 @@ static struct mtd_partition davinci_nand_partitions[] = {
 	/* two blocks with bad block table (and mirror) at the end */
 };
 
+static struct davinci_aemif_timing dm365_evm_nandflash_timing = {
+	.wsetup		= 20,
+	.wstrobe	= 20,
+	.whold		= 10,
+	.rsetup		= 20,
+	.rstrobe	= 40,
+	.rhold		= 0,
+	.ta		= 10,
+};
+
 static struct davinci_nand_pdata davinci_nand_data = {
 	.mask_chipsel		= BIT(14),
 	.parts			= davinci_nand_partitions,
@@ -168,6 +179,7 @@ static struct davinci_nand_pdata davinci_nand_data = {
 	.ecc_mode		= NAND_ECC_HW,
 	.options		= NAND_USE_FLASH_BBT,
 	.ecc_bits		= 4,
+	.timing			= &dm365_evm_nandflash_timing,
 };
 
 static struct resource davinci_nand_resources[] = {
