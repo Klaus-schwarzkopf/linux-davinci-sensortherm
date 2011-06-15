@@ -54,7 +54,7 @@
 #define DM365_EVM_MDIO_FREQUENCY	(2200000) /* PHY bus frequency */
 
 static struct snd_platform_data dm365_leopard_snd_data = {
-	.eventq_no = EVENTQ_3,
+	.asp_chan_q = EVENTQ_3,
 };
 
 static struct i2c_board_info i2c_info[] = {
@@ -70,7 +70,6 @@ static struct davinci_i2c_platform_data i2c_pdata = {
 	.bus_freq	= 400	/* kHz */,
 	.bus_delay	= 0	/* usec */,
 };
-#if 0
 /* Input available at the mt9p031 */
 static struct v4l2_input mt9p031_inputs[] = {
 	{
@@ -89,6 +88,24 @@ static struct vpfe_subdev_info vpfe_sub_devs[] = {
 		.num_inputs = ARRAY_SIZE(mt9p031_inputs),
 		.inputs = mt9p031_inputs,
 		.ccdc_if_params = {
+			.if_type = V4L2_MBUS_FMT_SBGGR10_1X10,
+			.hdpol = VPFE_PINPOL_POSITIVE,
+			.vdpol = VPFE_PINPOL_POSITIVE,
+		},
+		.board_info = {
+			I2C_BOARD_INFO("mt9p031", 0x48),
+			/* this is for PCLK rising edge */
+			.platform_data = (void *)1,
+		},
+	}
+#if 0
+	{
+		.module_name = "mt9p031",
+		.is_camera = 1,
+		.grp_id = VPFE_SUBDEV_MT9P031,
+		.num_inputs = ARRAY_SIZE(mt9p031_inputs),
+		.inputs = mt9p031_inputs,
+		.ccdc_if_params = {
 			.if_type = VPFE_RAW_BAYER,
 			.hdpol = VPFE_PINPOL_POSITIVE,
 			.vdpol = VPFE_PINPOL_POSITIVE,
@@ -99,8 +116,9 @@ static struct vpfe_subdev_info vpfe_sub_devs[] = {
 			.platform_data = (void *)1,
 		},
 	}
-};
 #endif
+};
+
 /* Set the input  for TVPxxx/MTxxxx sensors */
 static int dm365leopard_setup_video_input(enum vpfe_subdev_id id)
 {
@@ -125,7 +143,7 @@ static struct vpfe_config vpfe_cfg = {
        .num_subdevs = ARRAY_SIZE(vpfe_sub_devs),
        .sub_devs = vpfe_sub_devs,
        .card_name = "DM365 Leopard",
-       .ccdc = "DM365 ISIF",
+/*       .ccdc = "DM365 ISIF", */
        .num_clocks = 1,
        .clocks = {"vpss_master"},
 };
@@ -194,7 +212,7 @@ static void dm365leopard_usb_configure(void)
 	davinci_cfg_reg(DM365_GPIO66);
 	gpio_request(66, "usb");
 	gpio_direction_output(66, 0);
-	setup_usb(500, 8);
+	davinci_setup_usb(500, 8);
 }
 
 static void dm365leopard_tlv320aic3x_configure(void)
@@ -289,8 +307,9 @@ static __init void dm365_leopard_irq_init(void)
 }
 
 MACHINE_START(DM365_LEOPARD, "DM365 Leopard")
+/*
 	.phys_io	= IO_PHYS,
-	.io_pg_offst	= (__IO_ADDRESS(IO_PHYS) >> 18) & 0xfffc,
+	.io_pg_offst	= (__IO_ADDRESS(IO_PHYS) >> 18) & 0xfffc, */
 	.boot_params	= (0x80000100),
 	.map_io		= dm365_leopard_map_io,
 	.init_irq	= dm365_leopard_irq_init,
