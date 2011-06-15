@@ -582,10 +582,23 @@ MUX_CFG(DM365,	GPIO32,		4,   10,    3,	  0,	 false)
 MUX_CFG(DM365,	GPIO33,		4,   12,    3,	  0,	 false)
 MUX_CFG(DM365,	GPIO40,		4,   26,    3,	  0,	 false)
 MUX_CFG(DM365,	GPIO64_57,	2,   6,     1,	  0,	 false)
+MUX_CFG(DM365,	GPIO66,		2,   0,     3,	  0,	 false)
 MUX_CFG(DM365,	GPIO80,		1,   20,    3,	  1,	 false)
 MUX_CFG(DM365, GPIO82,		1,   17,    1,	  1,	 false)
 MUX_CFG(DM365, VCLK,		1,   22,    1,	  0,	 false)
 
+MUX_CFG(DM365,	VOUT_B0,	4,   0,     3,    3,     false)
+MUX_CFG(DM365,	VOUT_B1,	4,   2,     3,    3,     false)
+MUX_CFG(DM365,	VOUT_B2,	1,   20,    3,    2,     false)
+
+MUX_CFG(DM365,	VOUT_G0,	4,   4,     3,    3,     false)
+MUX_CFG(DM365,	VOUT_G1,	4,   6,     3,    3,     false)
+
+MUX_CFG(DM365,	VOUT_R0,	4,   10,    3,    3,     false)
+MUX_CFG(DM365,	VOUT_R1,	4,   12,    3,    3,     false)
+MUX_CFG(DM365,	VOUT_R2,	1,   18,    3,    2,     false)
+
+MUX_CFG(DM365,	VOUT_LCD_OE,	1,   17,    1,	  0,	 false)
 MUX_CFG(DM365,	VOUT_FIELD,	1,   18,    3,	  1,	 false)
 MUX_CFG(DM365,	VOUT_FIELD_G81,	1,   18,    3,	  0,	 false)
 MUX_CFG(DM365,	VOUT_HVSYNC,	1,   16,    1,	  0,	 false)

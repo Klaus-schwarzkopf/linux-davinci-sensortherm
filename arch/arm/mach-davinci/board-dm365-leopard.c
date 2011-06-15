@@ -70,7 +70,7 @@ static struct davinci_i2c_platform_data i2c_pdata = {
 	.bus_freq	= 400	/* kHz */,
 	.bus_delay	= 0	/* usec */,
 };
-
+#if 0
 /* Input available at the mt9p031 */
 static struct v4l2_input mt9p031_inputs[] = {
 	{
@@ -100,7 +100,7 @@ static struct vpfe_subdev_info vpfe_sub_devs[] = {
 		},
 	}
 };
-
+#endif
 /* Set the input  for TVPxxx/MTxxxx sensors */
 static int dm365leopard_setup_video_input(enum vpfe_subdev_id id)
 {
