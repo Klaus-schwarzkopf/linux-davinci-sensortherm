@@ -1,0 +1,18 @@
+#
+# Generic video config states
+#
+
+config DAVINCI_READ_REGS
+	tristate "davinci read regs"
+	depends on I2C 
+	help
+	  This driver read all registers from dm355.
+
+config SOC_CAMERA_MT9V126
+	tristate "mt9v126 support"
+	depends on SOC_CAMERA && I2C && VIDEO_V4L2
+	help
+	  This driver supports MT9V126 cameras from Micron.
+
+
+
