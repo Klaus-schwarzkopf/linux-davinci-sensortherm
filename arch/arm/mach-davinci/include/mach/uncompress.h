@@ -82,6 +82,7 @@ static inline void __arch_decomp_setup(unsigned long arch_id)
 		DEBUG_LL_DAVINCI(neuros_osd2,		0);
 		DEBUG_LL_DAVINCI(davinci_dm355_evm,	0);
 		DEBUG_LL_DAVINCI(dm355_leopard,		0);
+		DEBUG_LL_DAVINCI(dm365_leopard,		0);
 		DEBUG_LL_DAVINCI(davinci_dm6467_evm,	0);
 		DEBUG_LL_DAVINCI(davinci_dm365_evm,	0);
 

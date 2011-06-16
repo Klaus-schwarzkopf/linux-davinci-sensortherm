@@ -274,22 +274,15 @@ static void __init leopard_init_i2c(void)
 	i2c_register_board_info(1, i2c_info, ARRAY_SIZE(i2c_info));
 }
 
+/* only for dm386, see board-dm365-evm.c from more details */
 void enable_lcd(void)
 {
 }
 EXPORT_SYMBOL(enable_lcd);
 
+/* only for dm386, see board-dm365-evm.c from more details */
 void enable_hd_clk(void)
 {
-#if 0
-	u8 resets;
-	resets = __raw_readb(cpld + CPLD_RESETS);
-	if (cpu_is_davinci_dm368()) {
-		davinci_cfg_reg(DM365_GPIO80);
-		resets |= BIT(7) | BIT(6) | BIT(5);
-	}
-	__raw_writeb(resets, cpld + CPLD_RESETS);
-#endif
 }
 EXPORT_SYMBOL(enable_hd_clk);
 
