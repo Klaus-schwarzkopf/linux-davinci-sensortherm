@@ -45,6 +45,7 @@
 #include <mach/serial.h>
 #include <mach/mmc.h>
 #include <mach/nand.h>
+#include <mach/cputype.h>
 #include <mach/keyscan.h>
 #include <mach/gpio.h>
 #include <linux/videodev2.h>
@@ -272,6 +273,25 @@ static void __init leopard_init_i2c(void)
 	davinci_init_i2c(&i2c_pdata);
 	i2c_register_board_info(1, i2c_info, ARRAY_SIZE(i2c_info));
 }
+
+void enable_lcd(void)
+{
+}
+EXPORT_SYMBOL(enable_lcd);
+
+void enable_hd_clk(void)
+{
+#if 0
+	u8 resets;
+	resets = __raw_readb(cpld + CPLD_RESETS);
+	if (cpu_is_davinci_dm368()) {
+		davinci_cfg_reg(DM365_GPIO80);
+		resets |= BIT(7) | BIT(6) | BIT(5);
+	}
+	__raw_writeb(resets, cpld + CPLD_RESETS);
+#endif
+}
+EXPORT_SYMBOL(enable_hd_clk);
 
 static struct davinci_uart_config uart_config __initdata = {
 	.enabled_uarts = (1 << 0),
