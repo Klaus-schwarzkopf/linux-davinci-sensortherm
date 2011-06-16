@@ -293,7 +293,7 @@ static struct davinci_uart_config uart_config __initdata = {
 static void __init dm365_leopard_map_io(void)
 {
 	/* setup input configuration for VPFE input devices */
-	dm365_set_vpfe_config(&vpfe_cfg);
+	//dm365_set_vpfe_config(&vpfe_cfg);
 	dm365_init();
 }
 
