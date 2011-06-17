@@ -260,6 +260,8 @@ static int vpfe_enable_clock(struct vpfe_device *vpfe_dev)
 	if (!vpfe_cfg->num_clocks)
 		return 0;
 
+	v4l2_info(vpfe_dev->pdev->driver, "allocate memory for %i clocks\n", vpfe_cfg->num_clocks);
+
 	vpfe_dev->clks = kzalloc(vpfe_cfg->num_clocks *
 				   sizeof(struct clock *), GFP_KERNEL);
 

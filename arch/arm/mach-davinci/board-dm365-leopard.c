@@ -50,6 +50,7 @@
 #include <mach/gpio.h>
 #include <linux/videodev2.h>
 #include <media/davinci/videohd.h>
+#include <media/mt9v126.h>
 
 #define DM365_EVM_PHY_MASK		(0x2)
 #define DM365_EVM_MDIO_FREQUENCY	(2200000) /* PHY bus frequency */
@@ -82,6 +83,7 @@ static struct v4l2_input camera_inputs[] = {
 
 
 static struct vpfe_subdev_info vpfe_sub_devs[] = {
+#if 0
 	{
 		.module_name = "mt9p031",
 		.is_camera = 1,
@@ -99,6 +101,24 @@ static struct vpfe_subdev_info vpfe_sub_devs[] = {
 			.platform_data = (void *)1,
 		},
 	}
+#endif
+	{
+		.module_name = MT9V126_MODULE_NAME,
+		.is_camera = 1,
+		.grp_id = VPFE_SUBDEV_MT9V126,
+		.num_inputs = ARRAY_SIZE(camera_inputs),
+		.inputs = camera_inputs,
+		.ccdc_if_params = {
+			.if_type = V4L2_MBUS_FMT_YUYV8_2X8,//VPFE_BT656,
+			.hdpol = VPFE_PINPOL_POSITIVE,
+			.vdpol = VPFE_PINPOL_POSITIVE,
+		},
+		.board_info = {
+			I2C_BOARD_INFO(MT9V126_MODULE_NAME, MT9V126_I2C_ADDR),
+			/* this is for PCLK rising edge */
+			.platform_data = (void *)1,
+		},
+	},
 
 };
 
@@ -112,7 +132,9 @@ static int dm365leopard_setup_video_input(enum vpfe_subdev_id id)
 		case VPFE_SUBDEV_MT9P031:
 			label = "HD imager-MT9P031";
 			break;
-
+		case VPFE_SUBDEV_MT9V126:
+			label = "VGA imager-MT9V126";
+			break;
 		default:
 			return 0;
 	}
@@ -275,7 +297,7 @@ static struct davinci_uart_config uart_config __initdata = {
 static void __init dm365_leopard_map_io(void)
 {
 	/* setup input configuration for VPFE input devices */
-	//dm365_set_vpfe_config(&vpfe_cfg);
+	dm365_set_vpfe_config(&vpfe_cfg);
 	dm365_init();
 }
 
