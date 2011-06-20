@@ -359,7 +359,7 @@ static inline struct mt9v126 *to_mt9v126(struct v4l2_subdev *sd) {
 //TODO
 static int mt9v126_init(struct v4l2_subdev *sd, u32 val) {
 
-	int ret;
+	int ret =0;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 
 	printk( KERN_DEBUG "module init\n" );
@@ -380,7 +380,6 @@ static int mt9v126_init(struct v4l2_subdev *sd, u32 val) {
 
 static int mt9v126_s_stream(struct v4l2_subdev *sd, int enable) {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	int ret;
 
 	printk( KERN_DEBUG "s_stream\n" );
 
@@ -416,9 +415,9 @@ const struct v4l2_queryctrl *mt9v126_find_qctrl(u32 id) {
 
 static int mt9v126_s_fmt(struct v4l2_subdev *sd, struct v4l2_format *f) {
 
-	struct mt9v126 *mt9v126 = to_mt9v126(sd);
+	//struct mt9v126 *mt9v126 = to_mt9v126(sd);
 	int ret =0;
-	u16 xskip, yskip;
+	//u16 xskip, yskip;
 
 
 	printk( KERN_DEBUG "module_set_fmt\n" );
@@ -595,7 +594,7 @@ static int mt9v126_get_control(struct v4l2_subdev *sd,
 static int mt9v126_set_control(struct v4l2_subdev *sd,
 		struct v4l2_control *ctrl) {
 
-	struct mt9v126 *mt9v126 = to_mt9v126(sd);
+	//struct mt9v126 *mt9v126 = to_mt9v126(sd);
 	const struct v4l2_queryctrl *qctrl = NULL;
 	int data;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
