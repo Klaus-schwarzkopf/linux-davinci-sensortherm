@@ -89,7 +89,10 @@ int ths7303_setval(struct v4l2_subdev *sd, enum ths7303_filter_mode mode)
 		val |= input_bias_luma;
 	err = i2c_smbus_write_byte_data(client, THS7303_CHANNEL_2, val);
 	if (err)
-		goto out;
+	{
+		v4l_err(client, "write byte data failed, channel %i\n",THS7303_CHANNEL_2);
+		return err;
+	}
 
 	/* setup two chroma channels */
 	if (!disable)
@@ -97,14 +100,19 @@ int ths7303_setval(struct v4l2_subdev *sd, enum ths7303_filter_mode mode)
 
 	err = i2c_smbus_write_byte_data(client, THS7303_CHANNEL_1, temp);
 	if (err)
-		goto out;
+	{
+		v4l_err(client, "write byte data failed, channel %i\n",THS7303_CHANNEL_1);
+		return err;
+	}
 
 	err = i2c_smbus_write_byte_data(client, THS7303_CHANNEL_3, temp);
 	if (err)
-		goto out;
-out:
-	printk(KERN_INFO "write byte data failed\n");
+	{
+		v4l_err(client, "write byte data failed, channel %i\n",THS7303_CHANNEL_3);
+		return err;
+	}
 	return err;
+
 }
 
 static int ths7303_s_std_output(struct v4l2_subdev *sd, v4l2_std_id norm)
