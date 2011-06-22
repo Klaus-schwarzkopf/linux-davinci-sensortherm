@@ -359,8 +359,8 @@ static inline struct mt9v126 *to_mt9v126(struct v4l2_subdev *sd) {
 //TODO
 static int mt9v126_init(struct v4l2_subdev *sd, u32 val) {
 
-	int ret =0;
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret =1;
+	//struct i2c_client *client = v4l2_get_subdevdata(sd);
 
 	printk( KERN_DEBUG "module init\n" );
 	/* Disable chip output, synchronous option update */
@@ -413,7 +413,7 @@ const struct v4l2_queryctrl *mt9v126_find_qctrl(u32 id) {
 }
 
 
-static int mt9v126_s_fmt(struct v4l2_subdev *sd, struct v4l2_format *f) {
+static int mt9v126_s_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *f) {
 
 	//struct mt9v126 *mt9v126 = to_mt9v126(sd);
 	int ret =0;
@@ -425,8 +425,9 @@ static int mt9v126_s_fmt(struct v4l2_subdev *sd, struct v4l2_format *f) {
 	return ret;
 }
 
-static int mt9v126_try_fmt(struct v4l2_subdev *sd, struct v4l2_format *f) {
+static int mt9v126_try_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *f) {
 
+#if 0
 	struct v4l2_pix_format *pix = &f->fmt.pix;
 
 	printk( KERN_DEBUG "modul try_fmt\n" );
@@ -441,6 +442,7 @@ static int mt9v126_try_fmt(struct v4l2_subdev *sd, struct v4l2_format *f) {
 
 	pix->width &= ~0x01; /* has to be even */
 	pix->height &= ~0x01; /* has to be even */
+#endif
 	return 0;
 }
 
@@ -503,8 +505,9 @@ static int mt9v126_set_register(struct v4l2_subdev *sd,
 
 	return 0;
 }
-#endif
 
+#endif
+#if 0
 static int mt9v126_enum_fmt(struct v4l2_subdev *sd, struct v4l2_fmtdesc *fmt)
 {
 	struct v4l2_fmtdesc *ofmt;
@@ -519,6 +522,7 @@ static int mt9v126_enum_fmt(struct v4l2_subdev *sd, struct v4l2_fmtdesc *fmt)
 	fmt->pixelformat = ofmt->pixelformat;
 	return 0;
 }
+#endif
 
 static int mt9v126_get_control(struct v4l2_subdev *, struct v4l2_control *);
 static int mt9v126_set_control(struct v4l2_subdev *, struct v4l2_control *);
