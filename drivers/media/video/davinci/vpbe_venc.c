@@ -380,11 +380,18 @@ static int venc_set_prgb(struct v4l2_subdev *sd,
 	/* Setup clock at VPSS & VENC for SD */
 	if (pdata->setup_clock(VPBE_ENC_CUSTOM_TIMINGS,
 		CUSTOM_TIMING_480_272) < 0)
+	{
+		v4l2_err(sd, "venc_set_prgb: setup_clock\n");
 		return -EINVAL;
+	}
+
 
 	/* setup pinmux */
 	if (pdata->setup_pinmux(pdata->if_params, 0) < 0)
+	{
+		v4l2_err(sd, "venc_set_prgb: setup_pinmux\n");
 		return -EINVAL;
+	}
 
 	venc_enabledigitaloutput(sd, 1);
 

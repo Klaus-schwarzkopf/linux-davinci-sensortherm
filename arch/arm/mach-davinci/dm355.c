@@ -903,28 +903,28 @@ static int dm355_venc_setup_clock(enum vpbe_enc_timings_type type, __u64 mode)
 	int ret = 0;
 
 	switch (type) {
-	case VPBE_ENC_STD:
-		vpss_enable_clock(VPSS_VENC_CLOCK_SEL, 0);
-		__raw_writel(0x18, vpss_clk_ctrl_reg);
-		break;
-	case VPBE_ENC_DV_PRESET:
-		switch ((unsigned int)mode) {
-		case V4L2_DV_720P60:
-		case V4L2_DV_1080I60:
-		case V4L2_DV_1080P30:
-		case V4L2_DV_1080I30:
-			/*
-			 * For HD, use external clock source since we cannot
-			 * support HD mode with internal clocks.
-			 */
-			__raw_writel(0xa, vpss_clk_ctrl_reg);
+		case VPBE_ENC_STD:
+			vpss_enable_clock(VPSS_VENC_CLOCK_SEL, 0);
+			__raw_writel(0x18, vpss_clk_ctrl_reg);
+			break;
+		case VPBE_ENC_DV_PRESET:
+			switch ((unsigned int)mode) {
+				case V4L2_DV_720P60:
+				case V4L2_DV_1080I60:
+				case V4L2_DV_1080P30:
+				case V4L2_DV_1080I30:
+					/*
+					 * For HD, use external clock source since we cannot
+					 * support HD mode with internal clocks.
+					 */
+					__raw_writel(0xa, vpss_clk_ctrl_reg);
+					break;
+				default:
+					ret = -EINVAL;
+			}
 			break;
 		default:
 			ret = -EINVAL;
-		}
-		break;
-	default:
-		ret = -EINVAL;
 	}
 	return ret;
 }

@@ -1446,9 +1446,10 @@ static int dm365_venc_setup_clock(enum vpbe_enc_timings_type type, __u64 mode)
 		vpss_enable_clock(VPSS_VENC_CLOCK_SEL, 1);
 		vpss_enable_clock(VPSS_VPBE_CLOCK, 1);
 		__raw_writel(0x18, vpss_clkctl_reg);
-		if (cpu_is_davinci_dm368())
+		if (cpu_is_davinci_dm368()){
 			enable_hd_clk();
 			__raw_writel(0x3a, vpss_clkctl_reg);
+		}
 		break;
 	default:
 		ret = -EINVAL;
