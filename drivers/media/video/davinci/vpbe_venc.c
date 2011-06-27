@@ -918,6 +918,7 @@ static long venc_ioctl(struct v4l2_subdev *sd,
 		default:
 			ret = -EINVAL;
 		}
+		break;
 	default:
 		v4l2_err(sd, "Wrong IOCTL cmd:%x\n", cmd);
 		break;
