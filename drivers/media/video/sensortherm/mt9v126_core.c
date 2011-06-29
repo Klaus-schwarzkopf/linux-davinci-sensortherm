@@ -350,6 +350,9 @@ struct mt9v126 {
 	unsigned short y_skip_top; /* Lines to skip at the top */
 	unsigned short gain;
 	unsigned short exposure;
+	/*mc related members */
+	struct media_pad pad;
+	struct v4l2_mbus_framefmt format;
 };
 
 static inline struct mt9v126 *to_mt9v126(struct v4l2_subdev *sd) {
@@ -444,6 +447,107 @@ static int mt9v126_try_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *f)
 	pix->height &= ~0x01; /* has to be even */
 #endif
 	return 0;
+}
+
+/* enumerates mbus_fmt supported */
+static int mt9v126_enum_mbus_code(struct v4l2_subdev *subdev,
+				  struct v4l2_subdev_fh *fh,
+				  struct v4l2_subdev_mbus_code_enum *code)
+{
+	u32 pad = code->pad;
+	u32 index = code->index;
+
+	memset(code, 0, sizeof(*code));
+	code->index = index;
+	code->pad = pad;
+
+	if (index != 0)
+		return -EINVAL;
+
+	code->code = V4L2_MBUS_FMT_YUYV8_2X8;
+	return 0;
+}
+
+static int mt9v126_enum_frame_size(struct v4l2_subdev *subdev,
+				   struct v4l2_subdev_fh *fh,
+				   struct v4l2_subdev_frame_size_enum *fse)
+{
+
+	if (fse->index > 0)
+		return -EINVAL;
+
+	fse->min_width = 640;
+	fse->min_height = 480;
+	fse->max_width = 640;
+	fse->max_height = 480;
+
+	/* values should be even */
+	fse->min_width &= ~0x01;
+	fse->min_height &= ~0x01;
+	fse->max_width &= ~0x01;
+	fse->max_height &= ~0x01;
+
+	return 0;
+}
+
+static int mt9v126_get_pad_format(struct v4l2_subdev *sd,
+				  struct v4l2_subdev_fh *fh,
+			   struct v4l2_subdev_format *fmt)
+{
+	__u32 which	= fmt->which;
+	struct mt9v126 *mt9v126 = to_mt9v126(sd);
+
+	if (which == V4L2_SUBDEV_FORMAT_ACTIVE)
+		fmt->format = mt9v126->format;
+	else {
+		fmt->format.code = V4L2_MBUS_FMT_YUYV8_2X8;
+		fmt->format.width = clamp_t(u32, fmt->format.width,
+					    640,
+					    640);
+		fmt->format.height = clamp_t(u32,
+					     fmt->format.height,
+					     480,
+					     480);
+		fmt->format.field = V4L2_FIELD_NONE;
+	}
+
+	return 0;
+}
+
+static int mt9v126_set_pad_format(struct v4l2_subdev *sd,
+				  struct v4l2_subdev_fh *fh,
+		       struct v4l2_subdev_format *fmt)
+{
+	struct mt9v126 *mt9v126 = to_mt9v126(sd);
+	u16 xskip, yskip;
+	int ret =0;
+
+	struct v4l2_rect rect = {
+		.left	= mt9v126->x_current,
+		.top	= mt9v126->y_current,
+		.width	= fmt->format.width,
+		.height	= fmt->format.height,
+	};
+
+	if (fmt->format.code != V4L2_MBUS_FMT_SBGGR10_1X10)
+		return -EINVAL;
+
+	/* Is this more optimal than just a division? */
+	for (xskip = 8; xskip > 1; xskip--)
+		if (rect.width * xskip <= 640)
+			break;
+
+	for (yskip = 8; yskip > 1; yskip--)
+		if (rect.height * yskip <= 480)
+			break;
+
+
+
+	mt9v126->xskip = xskip;
+	mt9v126->yskip = yskip;
+
+	mt9v126->format = fmt->format;
+	return ret;
 }
 
 static int mt9v126_get_chip_id(struct v4l2_subdev *sd,
@@ -547,9 +651,17 @@ static const struct v4l2_subdev_video_ops mt9v126_video_ops = {
 	//.enum_fmt = mt9v126_enum_fmt,
 };
 
+static const struct v4l2_subdev_pad_ops mt9v126_pad_ops = {
+	.enum_mbus_code = mt9v126_enum_mbus_code,
+	.enum_frame_size = mt9v126_enum_frame_size,
+	.get_fmt = mt9v126_get_pad_format,
+	.set_fmt = mt9v126_set_pad_format,
+};
+
 static const struct v4l2_subdev_ops mt9v126_ops = { 
 	.core = &mt9v126_core_ops,
 	.video = &mt9v126_video_ops, 
+	.pad = &mt9v126_pad_ops,
 };
 
 static int mt9v126_queryctrl(struct v4l2_subdev *sd,
@@ -717,6 +829,18 @@ static int mt9v126_probe(struct i2c_client *client,
 	sd = &mt9v126->sd;
 	v4l2_i2c_subdev_init(sd, client, &mt9v126_ops);
 
+	mt9v126->pad.flags = MEDIA_PAD_FL_OUTPUT;
+	mt9v126->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
+	mt9v126->sd.entity.flags |= MEDIA_ENT_T_V4L2_SUBDEV_SENSOR;
+
+	ret = media_entity_init(&mt9v126->sd.entity, 1, &mt9v126->pad, 0);
+
+	if (ret < 0) {
+		v4l2_err(sd, "%s sensor driver failed to register !!\n",
+			 sd->name);
+
+		goto clean;
+	}
 
 	v4l2_info(sd, "%s decoder driver registered !!\n", sd->name);
 	return 0;
