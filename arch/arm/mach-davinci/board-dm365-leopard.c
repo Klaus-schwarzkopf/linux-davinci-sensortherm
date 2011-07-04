@@ -85,7 +85,7 @@ static struct v4l2_input camera_inputs[] = {
 
 
 static struct vpfe_subdev_info vpfe_sub_devs[] = {
-#if 0
+#ifdef SOC_CAMERA_MT9P031
 	{
 		.module_name = "mt9p031",
 		.is_camera = 1,
@@ -104,6 +104,7 @@ static struct vpfe_subdev_info vpfe_sub_devs[] = {
 		},
 	}
 #endif
+#ifdef SOC_CAMERA_MT9V126
 	{
 		.module_name = MT9V126_MODULE_NAME,
 		.is_camera = 1,
@@ -121,7 +122,7 @@ static struct vpfe_subdev_info vpfe_sub_devs[] = {
 			.platform_data = (void *)1,
 		},
 	},
-
+#endif
 };
 
 /* Set the input  for TVPxxx/MTxxxx sensors */
