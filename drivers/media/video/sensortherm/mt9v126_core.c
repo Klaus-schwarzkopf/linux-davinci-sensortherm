@@ -54,12 +54,6 @@ module_param(debug, bool, 0644);
 MODULE_PARM_DESC(debug, "Debug level (0-1)");
 
 static const struct v4l2_fmtdesc mt9v126_formats[] = {
-/*		{
-				.index = 0,
-				.type =	V4L2_BUF_TYPE_VIDEO_CAPTURE,
-				.description = "Bayer (sRGB) 10 bit",
-				.pixelformat = V4L2_PIX_FMT_SGRBG10,
-		},*/
 	{
 	 .index = 0,
 	 .type = V4L2_BUF_TYPE_VIDEO_CAPTURE,
@@ -529,7 +523,7 @@ static int mt9v126_set_pad_format(struct v4l2_subdev *sd,
 		.height	= fmt->format.height,
 	};
 
-	if (fmt->format.code != V4L2_MBUS_FMT_SBGGR10_1X10)
+	if (fmt->format.code != V4L2_MBUS_FMT_YUYV8_2X8)
 		return -EINVAL;
 
 	/* Is this more optimal than just a division? */
@@ -827,7 +821,9 @@ static int mt9v126_probe(struct i2c_client *client,
 
 	/* Register with V4L2 layer as slave device */
 	sd = &mt9v126->sd;
+
 	v4l2_i2c_subdev_init(sd, client, &mt9v126_ops);
+	strlcpy(sd->name, MT9V126_MODULE_NAME, sizeof(sd->name));
 
 	mt9v126->pad.flags = MEDIA_PAD_FL_OUTPUT;
 	mt9v126->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;

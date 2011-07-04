@@ -76,7 +76,7 @@ static int vpfe_update_current_ext_subdev(struct vpfe_video_device *video)
 		}
 	}
 
-	/* if user faied to link decoder/sensor to ccdc */
+	/* if user failed to link decoder/sensor to ccdc */
 	if (i == vpfe_cfg->num_subdevs) {
 		printk(KERN_ERR "media chain input should be sensor or decoder\n");
 		return -1;
