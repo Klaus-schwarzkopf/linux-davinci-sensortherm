@@ -1603,7 +1603,7 @@ static int vpif_enum_fmt_vid_cap(struct file *file, void  *priv,
 	struct channel_obj *ch = fh->channel;
 
 	if (fmt->index != 0) {
-		vpif_dbg(1, debug, "Invalid format index\n");
+		vpif_dbg(1, debug, "vpif_enum_fmt_vid_cap: Invalid format index\n");
 		return -EINVAL;
 	}
 

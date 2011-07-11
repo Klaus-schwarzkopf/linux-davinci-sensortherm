@@ -412,6 +412,8 @@ int ipipe_hw_setup(struct ipipe_params *config)
 	u32 data_format;
 	u32 utemp = 0;
 
+	printk( KERN_DEBUG "ipipe_hw_setup\n" );
+
 	if (!config) {
 		printk(KERN_ERR "NULL config block received\n");
 		return -EINVAL;

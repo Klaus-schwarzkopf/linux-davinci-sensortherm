@@ -662,7 +662,7 @@ static int vpfe_enum_fmt(struct file *file, void  *priv,
 	/* since already subdev pad format is set,
 	only one pixel format is available */
 	if (fmt->index > 0) {
-		printk(KERN_ERR "invalid index\n");
+		printk(KERN_ERR "vpfe_enum_fmt: invalid index\n");
 		return -EINVAL;
 	}
 

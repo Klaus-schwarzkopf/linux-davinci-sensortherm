@@ -963,7 +963,7 @@ static int vpbe_display_enum_fmt(struct file *file, void  *priv,
 				"VIDIOC_ENUM_FMT, layer id = %d\n",
 				layer->device_id);
 	if (fmt->index > 0) {
-		v4l2_err(&vpbe_dev->v4l2_dev, "Invalid format index\n");
+		v4l2_err(&vpbe_dev->v4l2_dev, "vpbe_display_enum_fmt: Invalid format index\n");
 		return -EINVAL;
 	}
 
@@ -1319,7 +1319,7 @@ static int vpbe_display_streamoff(struct file *file, void *priv,
 
 	/* If io is allowed for this file handle, return error */
 	if (!fh->io_allowed) {
-		v4l2_err(&vpbe_dev->v4l2_dev, "No io_allowed\n");
+		v4l2_err(&vpbe_dev->v4l2_dev, "vpbe_display_streamoff: No io_allowed\n");
 		return -EACCES;
 	}
 
@@ -1359,7 +1359,7 @@ static int vpbe_display_streamon(struct file *file, void *priv,
 
 	/* If file handle is not allowed IO, return error */
 	if (!fh->io_allowed) {
-		v4l2_err(&vpbe_dev->v4l2_dev, "No io_allowed\n");
+		v4l2_err(&vpbe_dev->v4l2_dev, "vpbe_display_streamon: No io_allowed\n");
 		return -EACCES;
 	}
 	/* If Streaming is already started, return error */
@@ -1429,7 +1429,7 @@ static int vpbe_display_dqbuf(struct file *file, void *priv,
 	}
 	/* If this file handle is not allowed to do IO, return error */
 	if (!fh->io_allowed) {
-		v4l2_err(&vpbe_dev->v4l2_dev, "No io_allowed\n");
+		v4l2_err(&vpbe_dev->v4l2_dev, "vpbe_display_dqbuf: No io_allowed\n");
 		return -EACCES;
 	}
 	if (file->f_flags & O_NONBLOCK)
@@ -1458,7 +1458,7 @@ static int vpbe_display_qbuf(struct file *file, void *priv,
 
 	/* If this file handle is not allowed to do IO, return error */
 	if (!fh->io_allowed) {
-		v4l2_err(&vpbe_dev->v4l2_dev, "No io_allowed\n");
+		v4l2_err(&vpbe_dev->v4l2_dev, "vpbe_display_qbuf: No io_allowed\n");
 		return -EACCES;
 	}
 

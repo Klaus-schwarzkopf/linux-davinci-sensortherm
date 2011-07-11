@@ -89,6 +89,8 @@ int ipipeif_hw_setup(struct ipipeif *params)
 	unsigned int utemp = 0, utemp1 = 0x7;
 	enum v4l2_mbus_pixelcode isif_port_if;
 
+	printk( KERN_DEBUG "ipipeif_hw_setup\n" );
+
 	if (NULL == params)
 		return -1;
 	/* Enable clock to IPIPEIF and IPIPE */
