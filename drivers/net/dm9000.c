@@ -152,10 +152,27 @@ dm9000_reset(board_info_t * db)
 {
 	dev_dbg(db->dev, "resetting device\n");
 
-	/* RESET device */
+#define GPCR_GPIO0_OUT	    (1<<0)
+#define NCR_LBK_INT_MAC     (1<<1)
+	/* Reset DM9000,
+	   see DM9000 Application Notes V1.22 Jun 11, 2004 page 29 */
+
+	/* DEBUG: Make all GPIO0 outputs, all others inputs */
+	writeb(DM9000_GPCR, db->io_addr);
+	udelay(200);
+	writeb(GPCR_GPIO0_OUT, db->io_data);
+	udelay(200);
+
+	/* Step 1: Power internal PHY by writing 0 to GPIO0 pin */
+	writeb(DM9000_GPR, db->io_addr);
+	udelay(200);
+	writeb(0, db->io_data);
+	udelay(200);
+
+	/* Step 2: Software reset */
 	writeb(DM9000_NCR, db->io_addr);
 	udelay(200);
-	writeb(NCR_RST, db->io_data);
+	writeb(NCR_LBK_INT_MAC | NCR_RST, db->io_data);
 	udelay(200);
 }
 

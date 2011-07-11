@@ -29,6 +29,7 @@
 #include <linux/delay.h>
 #include <media/davinci/vid_encoder_if.h>
 #include <media/davinci/logicpd_encoder.h>
+//#include <media/davinci/davinci_platform.h>
 
 /* Function prototypes */
 static int logicpd_encoder_initialize(struct vid_encoder_device *enc, int flag);
@@ -54,6 +55,21 @@ static struct logicpd_encoder_config logicpd_encoder_configuration = {
 		      .output_name = VID_ENC_OUTPUT_LCD,
 		      .no_of_standard = LOGICPD_ENCODER_GRAPHICS_NUM_STD,
 		      .standards[0] = {
+				       .name = VID_ENC_STD_320x240,
+				       .std = 1,
+				       .if_type = VID_ENC_IF_PRGB,
+				       .interlaced = 0,
+				       .xres = 320,
+				       .yres = 240,
+				       .fps = {60, 1},
+				       .left_margin = 68,//85,
+				       .right_margin = 20,//68,//70,
+				       .upper_margin = 18,//32,
+				       .lower_margin = 4,//18,//16, //11,
+				       .hsync_len = 12,//9,
+				       .vsync_len = 12,//9,
+				       .flags = 0},	/* hsync -ve, vsync -ve */
+			  .standards[1] = {
 				       .name = VID_ENC_STD_640x480,
 				       .std = 1,
 				       .if_type = VID_ENC_IF_PRGB,
@@ -68,7 +84,7 @@ static struct logicpd_encoder_config logicpd_encoder_configuration = {
 				       .hsync_len = 9,
 				       .vsync_len = 9,
 				       .flags = 0},	/* hsync -ve, vsync -ve */
-		      .standards[1] = {
+		      .standards[2] = {
 				       .name = VID_ENC_STD_640x400,
 				       .std = 1,
 				       .if_type = VID_ENC_IF_PRGB,
@@ -83,7 +99,7 @@ static struct logicpd_encoder_config logicpd_encoder_configuration = {
 				       .hsync_len = 9,
 				       .vsync_len = 9,
 				       .flags = 2},	/* hsync -ve, vsync +ve */
-		      .standards[2] = {
+		      .standards[3] = {
 				       .name = VID_ENC_STD_640x350,
 				       .std = 1,
 				       .if_type = VID_ENC_IF_PRGB,
@@ -98,7 +114,22 @@ static struct logicpd_encoder_config logicpd_encoder_configuration = {
 				       .hsync_len = 9,
 				       .vsync_len = 9,
 				       .flags = 1},	/* hsync +ve, vsync -ve */
-		      .standards[3] = {	/* This is programmed by the user application. We just save
+			  .standards[4] = {
+				       .name = VID_ENC_STD_320x240,
+				       .std = 1,
+				       .if_type = VID_ENC_IF_PRGB,
+				       .interlaced = 0,
+				       .xres = 320,
+				       .yres = 240,
+				       .fps = {60, 1},
+				       .left_margin = 85,
+				       .right_margin = 70,
+				       .upper_margin = 32,
+				       .lower_margin = 11,
+				       .hsync_len = 9,
+				       .vsync_len = 9,
+				       .flags = 0},	/* hsync -ve, vsync -ve */
+		      .standards[5] = {	/* This is programmed by the user application. We just save
 					   the received timing information */
 				       .name = VID_ENC_STD_NON_STANDARD,
 				       .std = 0,
@@ -119,7 +150,7 @@ static struct logicpd_encoder_config logicpd_encoder_configuration = {
 
 static struct logicpd_encoder_channel logicpd_encoder_channel_info = {
 	.params.outindex = 0,
-	.params.mode = VID_ENC_STD_640x480,
+	.params.mode = VID_ENC_STD_320x240,
 	.enc_device = NULL
 };
 

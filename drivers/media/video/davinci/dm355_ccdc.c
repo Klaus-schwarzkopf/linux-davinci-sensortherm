@@ -117,11 +117,13 @@ static u32 ccdc_raw_yuv_pix_formats[] =
 /* register access routines */
 static inline u32 regr(u32 offset)
 {
+	//printk( KERN_INFO "\tccdc_base_addr 0x%08x\n", ccdc_base_addr);
 	return __raw_readl(ccdc_base_addr + offset);
 }
 
 static inline void regw(u32 val, u32 offset)
 {
+	//printk( KERN_INFO "\tccdc_base_addr 0x%08x\n", ccdc_base_addr);
 	__raw_writel(val, ccdc_base_addr + offset);
 }
 

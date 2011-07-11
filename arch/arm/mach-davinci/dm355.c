@@ -518,6 +518,9 @@ MUX_CFG(DM355,	VIN_CAM_HD,	0,   11,    1,    1,	 false)
 MUX_CFG(DM355,	VIN_YIN_EN,	0,   10,    1,    1,	 false)
 MUX_CFG(DM355,	VIN_CINL_EN,	0,   0,   0xff, 0x55,	 false)
 MUX_CFG(DM355,	VIN_CINH_EN,	0,   8,     3,    3,	 false)
+
+
+MUX_CFG(DM355,	GPIO_25_30,	3,   0,   0x3f,    0,	 false)
 #endif
 };
 

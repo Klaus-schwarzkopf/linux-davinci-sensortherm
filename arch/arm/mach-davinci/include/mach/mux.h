@@ -179,6 +179,10 @@ enum davinci_dm355_index {
 	DM355_VIN_YIN_EN,
 	DM355_VIN_CINL_EN,
 	DM355_VIN_CINH_EN,
+
+	/* GPIO enable */
+	DM355_GPIO_25_30,
+	
 };
 
 enum davinci_dm365_index {

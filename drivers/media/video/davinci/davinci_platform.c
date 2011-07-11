@@ -152,6 +152,7 @@ static __inline__ u32 dispc_reg_merge(u32 offset, u32 val, u32 mask)
 
 u32 venc_reg_in(u32 offset)
 {
+	//printk( KERN_INFO "\tvenc->venc_base 0x%08x\n", venc->venc_base);
 	return (__raw_readl(venc->venc_base + offset));
 }
 EXPORT_SYMBOL(venc_reg_in);
@@ -816,6 +817,92 @@ EXPORT_SYMBOL(davinci_enc_set_dclk_pw);
 /*
  * setting DLCD 480P PRGB mode
  */
+static void davinci_enc_set_prgb_new(struct vid_enc_mode_info *mode_info)
+{
+
+	enableDigitalOutput(1);
+
+	dispc_reg_out(VENC_VIDCTL, 0x141);
+	/* set VPSS clock */
+	__raw_writel(0x18, IO_ADDRESS(SYS_VPSS_CLKCTL));
+
+	dispc_reg_out(VENC_DCLKCTL, 0);
+	dispc_reg_out(VENC_DCLKPTN0, 0);
+
+	/* Set the OSD Divisor to 1. */
+	dispc_reg_out(VENC_OSDCLK0, 0);
+	dispc_reg_out(VENC_OSDCLK1, 1);
+	/* Clear composite mode register */
+	dispc_reg_out(VENC_CVBS, 0);
+
+	/* Set PINMUX1 to enable all outputs needed to support RGB666 */
+	if (cpu_is_davinci_dm355()) {
+		/* Enable the venc and dlcd clocks. */
+		dispc_reg_out(VENC_CLKCTL, 0x11);
+		davinci_cfg_reg(DM355_VOUT_FIELD_G70);
+		davinci_cfg_reg(DM355_VOUT_COUTL_EN);
+		davinci_cfg_reg(DM355_VOUT_COUTH_EN);
+	} else if (cpu_is_davinci_dm365()) {
+		/* DM365 pinmux */
+		dispc_reg_out(VENC_CLKCTL, 0x11);
+		davinci_cfg_reg(DM365_VOUT_FIELD_G81);
+		davinci_cfg_reg(DM365_VOUT_COUTL_EN);
+		davinci_cfg_reg(DM365_VOUT_COUTH_EN);
+	}
+
+	osd_write_left_margin(mode_info->left_margin);
+	osd_write_upper_margin(mode_info->upper_margin);
+
+	/* Set VIDCTL to select VCLKE = 1,
+	   VCLKZ =0, SYDIR = 0 (set o/p), DOMD = 0 */
+	dispc_reg_merge(VENC_VIDCTL, 1 << VENC_VIDCTL_VCLKE_SHIFT,
+			VENC_VIDCTL_VCLKE);
+	dispc_reg_merge(VENC_VIDCTL, 0 << VENC_VIDCTL_VCLKZ_SHIFT,
+			VENC_VIDCTL_VCLKZ);
+	dispc_reg_merge(VENC_VIDCTL, 0 << VENC_VIDCTL_SYDIR_SHIFT,
+			VENC_VIDCTL_SYDIR);
+	dispc_reg_merge(VENC_VIDCTL, 0 << VENC_VIDCTL_YCDIR_SHIFT,
+			VENC_VIDCTL_YCDIR);
+
+//	dispc_reg_merge(VENC_DCLKCTL,
+//			1 << VENC_DCLKCTL_DCKEC_SHIFT, VENC_DCLKCTL_DCKEC);
+
+	//dispc_reg_out(VENC_DCLKPTN0, 0x1);
+
+		dispc_reg_out(VENC_DCLKPTN0, 0x3);
+		dispc_reg_out(VENC_DCLKCTL, 0x3);
+
+	davinci_enc_set_display_timing(mode_info);
+
+	dispc_reg_out(VENC_SYNCCTL,
+		      (VENC_SYNCCTL_SYEV |
+		       VENC_SYNCCTL_SYEH | VENC_SYNCCTL_HPL
+		       | VENC_SYNCCTL_VPL));
+
+	/* Configure VMOD. No change in VENC bit */
+	dispc_reg_out(VENC_VMOD, 0x2011);
+	dispc_reg_out(VENC_LCDOUT, 0x1);
+
+	//	//FIXME
+	//	dispc_reg_out(VENC_VMOD, 0x2000);
+	//	dispc_reg_out(VENC_DCLKPTN0, 0x3);
+	//	dispc_reg_out(VENC_DCLKCTL, 0x3);
+	//	//dispc_reg_out(VENC_LCDOUT, 0x0);
+	//	//dispc_reg_out(VENC_VIDCTL, 0x2010);
+	//
+	//
+	//	dispc_reg_out(VENC_HSPLS, 0x9);
+	//	dispc_reg_out(VENC_VSPLS, 0x9);
+	//	dispc_reg_out(VENC_HINT, 0x197);
+	//	dispc_reg_out(VENC_HSTART, 0x44);
+	//	dispc_reg_out(VENC_HVALID, 0x140);
+	//	dispc_reg_out(VENC_VINT, 0x105);
+	//	dispc_reg_out(VENC_VSTART, 0x12);
+	//	dispc_reg_out(VENC_VVALID, 0xf0);
+	//	dispc_reg_out(VENC_HSDLY, 0x0);
+	//	dispc_reg_out(VENC_VSDLY, 0x0);
+
+}
 static void davinci_enc_set_prgb(struct vid_enc_mode_info *mode_info)
 {
 
@@ -885,8 +972,8 @@ static void davinci_enc_set_prgb(struct vid_enc_mode_info *mode_info)
 	dispc_reg_out(VENC_VMOD, 0x2011);
 	dispc_reg_out(VENC_LCDOUT, 0x1);
 
-}
 
+}
 /*
  *
  */
@@ -1127,7 +1214,8 @@ void davinci_enc_priv_setmode(struct vid_enc_device_mgr *mgr)
 		davinci_enc_set_525p(&mgr->current_mode);
 	} else if (strcmp(mgr->current_mode.name, VID_ENC_STD_576P_50) == 0) {
 		davinci_enc_set_625p(&mgr->current_mode);
-	} else if (strcmp(mgr->current_mode.name, VID_ENC_STD_640x480) == 0 ||
+	} else if (strcmp(mgr->current_mode.name, VID_ENC_STD_320x240) == 0 ||
+	    strcmp(mgr->current_mode.name, VID_ENC_STD_640x480) == 0 ||
 		strcmp(mgr->current_mode.name, VID_ENC_STD_640x400) == 0 ||
 		strcmp(mgr->current_mode.name, VID_ENC_STD_640x350) == 0 ||
 		strcmp(mgr->current_mode.name, VID_ENC_STD_800x480) == 0) {
@@ -1167,9 +1255,12 @@ void davinci_enc_set_mode_platform(int channel, struct vid_enc_device_mgr *mgr)
 
 	if (0 == mgr->current_mode.std) {
 		davinci_enc_set_display_timing(&mgr->current_mode);
-		return;
+
+
+	}else{
+		davinci_enc_priv_setmode(mgr);
 	}
-	davinci_enc_priv_setmode(mgr);
+
 }
 
 EXPORT_SYMBOL(davinci_enc_set_mode_platform);
@@ -1206,7 +1297,7 @@ static int davinci_venc_probe(struct platform_device *pdev)
 		dev_err(venc->vdev, "Unable to map VENC MMIO\n");
 		goto release_venc;
 	}
-
+	printk( KERN_INFO "\tVENC \tstart:0x%08x \tend:0x%08x\n", res->start, res->end);
 	venc->invert_field = pdata->invert_field;
 
 	return 0;
