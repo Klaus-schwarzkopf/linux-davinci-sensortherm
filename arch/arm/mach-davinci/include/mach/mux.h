@@ -182,7 +182,7 @@ enum davinci_dm355_index {
 
 	/* GPIO enable */
 	DM355_GPIO_25_30,
-	
+
 };
 
 enum davinci_dm365_index {
@@ -299,8 +299,17 @@ enum davinci_dm365_index {
 	DM365_GPIO20,
 	DM365_GPIO33,
 	DM365_GPIO40,
+	DM365_GPIO66,
+	DM365_GPIO80,
+	DM365_GPIO82,
+	DM365_VCLK,
+
+	/* CLKOUT */
+	DM365_CLKOUT1,
+	DM365_CLKOUT2,
 
 	/* Video */
+	DM365_EXTCLK,
 	DM365_VOUT_FIELD,
 	DM365_VOUT_FIELD_G81,
 	DM365_VOUT_HVSYNC,
@@ -335,7 +344,20 @@ enum davinci_dm365_index {
 	/* EDMA event muxing */
 	DM365_EVT2_ASP_TX,
 	DM365_EVT3_ASP_RX,
+	DM365_EVT2_VC_TX,
+	DM365_EVT3_VC_RX,
 	DM365_EVT26_MMC0_RX,
+
+	/* Video Output RG888*/
+	DM365_VOUT_B0,
+	DM365_VOUT_B1,
+	DM365_VOUT_B2,
+	DM365_VOUT_G0,
+	DM365_VOUT_G1,
+	DM365_VOUT_R0,
+	DM365_VOUT_R1,
+	DM365_VOUT_R2,
+	DM365_VOUT_LCD_OE,
 };
 
 enum da830_index {
