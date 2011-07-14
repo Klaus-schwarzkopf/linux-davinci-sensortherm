@@ -1284,7 +1284,8 @@ static int ccdc_config_ycbcr(int mode)
 			<< CCDC_VD_POL_SHIFT);
 		/* setup BT.656, embedded sync  */
 		regw(3, REC656IF);
-		ccdcfg = ccdcfg | CCDC_DATA_PACK8 | CCDC_YCINSWP_YCBCR;
+		//ccdcfg = ccdcfg | CCDC_DATA_PACK8 | CCDC_YCINSWP_YCBCR;
+		ccdcfg = ccdcfg | CCDC_DATA_PACK8 | CCDC_YCINSWP_RAW | CCDC_LATCH_ON_VSYNC_DISABLE | (1<<9);
 		break;
 	case V4L2_MBUS_FMT_YUYV10_2X10:
 		if (params->pix_fmt != CCDC_PIXFMT_YCBCR_8BIT) {

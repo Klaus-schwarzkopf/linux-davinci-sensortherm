@@ -52,6 +52,7 @@
 #include <media/davinci/videohd.h>
 #include <media/mt9v126.h>
 
+#define VPSS_CLK_CTRL						0x01C40044
 #define DM365_EVM_PHY_MASK		(0x2)
 #define DM365_EVM_MDIO_FREQUENCY	(2200000) /* PHY bus frequency */
 
@@ -104,7 +105,7 @@ static struct vpfe_subdev_info vpfe_sub_devs[] = {
 		},
 	}
 #endif
-#ifdef CONFIG_SOC_CAMERA_MT9V126
+#if defined(CONFIG_SOC_CAMERA_MT9V126) || defined(CONFIG_SOC_CAMERA_MT9V126_MODULE)
 	{
 		.module_name = MT9V126_MODULE_NAME,
 		.is_camera = 1,
@@ -130,6 +131,7 @@ static int dm365leopard_setup_video_input(enum vpfe_subdev_id id)
 {
 	const char *label;
 
+	u32 vpss_clk_ctrl=0;
 	switch (id) {
 
 		case VPFE_SUBDEV_MT9P031:
@@ -137,6 +139,9 @@ static int dm365leopard_setup_video_input(enum vpfe_subdev_id id)
 			break;
 		case VPFE_SUBDEV_MT9V126:
 			label = "VGA imager-MT9V126";
+			vpss_clk_ctrl =  __raw_readl(IO_ADDRESS(VPSS_CLK_CTRL));
+			__raw_writel(vpss_clk_ctrl | (1<<2), IO_ADDRESS(VPSS_CLK_CTRL));
+
 			break;
 		default:
 			return 0;
@@ -356,6 +361,7 @@ static struct vpbe_output dm365_vpbe_outputs[] = {
 	},
 };
 
+#if defined(CONFIG_VIDEO_THS7303) || defined(CONFIG_VIDEO_THS7303_MODULE)
 /*
  * Amplifiers on the board
  */
@@ -366,11 +372,14 @@ static struct amp_config_info vpbe_amp = {
 		I2C_BOARD_INFO("ths7303", 0x2c)
 	}
 };
+#endif
 
 static struct vpbe_display_config vpbe_display_cfg = {
 	.module_name	= "dm365-vpbe-display",
 	.i2c_adapter_id	= 1,
+#if defined(CONFIG_VIDEO_THS7303) || defined(CONFIG_VIDEO_THS7303_MODULE)
 	.amp		= &vpbe_amp,
+#endif
 	.osd		= {
 		.module_name	= VPBE_OSD_SUBDEV_NAME,
 	},
