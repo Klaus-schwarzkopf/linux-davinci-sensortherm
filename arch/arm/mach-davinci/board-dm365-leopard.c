@@ -48,6 +48,7 @@
 #include <mach/cputype.h>
 #include <mach/keyscan.h>
 #include <mach/gpio.h>
+#include <linux/gpio_keys.h>
 #include <linux/videodev2.h>
 #include <media/davinci/videohd.h>
 #include <media/mt9v126.h>
@@ -139,6 +140,7 @@ static int dm365leopard_setup_video_input(enum vpfe_subdev_id id)
 			break;
 		case VPFE_SUBDEV_MT9V126:
 			label = "VGA imager-MT9V126";
+			//VPSS_CLK_CTRL.PCLK_INV = 1 for BT.656
 			vpss_clk_ctrl =  __raw_readl(IO_ADDRESS(VPSS_CLK_CTRL));
 			__raw_writel(vpss_clk_ctrl | (1<<2), IO_ADDRESS(VPSS_CLK_CTRL));
 
@@ -515,9 +517,82 @@ static void __init leopard_init_i2c(void)
 	i2c_register_board_info(1, i2c_info, ARRAY_SIZE(i2c_info));
 }
 
+#if defined(CONFIG_KEYBOARD_GPIO) || defined(CONFIG_KEYBOARD_GPIO_MODULE)
+/*
+ * Buttons gpio dm365(22-25), dm355(25-28)
+ */
+static struct gpio_keys_button leo_j4_button[] = {
+		{ .desc = "Key enter",
+				.gpio = GPIO(22),
+				.active_low = 0,
+				.code = KEY_ENTER,
+				.type = EV_KEY,
+				.debounce_interval = 20,},/* debounce ticks interval in msecs */
+		{ .desc = "Key menu",
+				.gpio = GPIO(23),
+				.active_low = 0,
+				.code = KEY_MENU,
+				.type = EV_KEY,
+				.debounce_interval = 20,},/* debounce ticks interval in msecs */
+		{ .desc = "Key up",
+				.gpio = GPIO(24),
+				.active_low = 0,
+				.code = KEY_UP,
+				.type = EV_KEY,
+				.debounce_interval = 20,},/* debounce ticks interval in msecs */
+		{ .desc = "Key down",
+				.gpio = GPIO(25),
+				.active_low = 0,
+				.code = KEY_DOWN,
+				.type = EV_KEY,
+				.debounce_interval = 20,},/* debounce ticks interval in msecs */
+};
+
+static struct gpio_keys_platform_data stk_j1_button_data = {
+		.buttons = leo_j4_button,
+		.nbuttons = ARRAY_SIZE(leo_j4_button),
+		.rep =1, /* enable input subsystem auto repeat */
+};
+
+static struct platform_device gpio_keys_dev = {
+		.name = "gpio-keys",
+		.id = 0,
+		.dev = {
+				.platform_data = &stk_j1_button_data,
+		}
+};
+
+
+static void dm365leopard_keys_configure(void)
+{
+
+	davinci_cfg_reg(DM365_GPIO22);
+	davinci_cfg_reg(DM365_GPIO23);
+	davinci_cfg_reg(DM365_GPIO24);
+	davinci_cfg_reg(DM365_GPIO25);
+	platform_device_register(&gpio_keys_dev);
+}
+#endif
+
+
 /* only for dm386, see board-dm365-evm.c from more details */
 void enable_lcd(void)
 {
+	/* Turn on LCD backlight for DM368 */
+//	if (cpu_is_davinci_dm368()) {
+//		u8 resets;
+//
+//		resets = __raw_readb(cpld + CPLD_RESETS);
+//		/* Configure 9.25MHz clock to LCD */
+//		resets |= BIT(7);
+//		__raw_writeb(resets, cpld + CPLD_RESETS);
+//
+//		/* CPLD_CONN_GIO17 is level high */
+//		__raw_writeb(0xff, cpld + CPLD_CCD_IO1);
+//
+//		/* CPLD_CONN_GIO17 is an output */
+//		__raw_writeb(0xfb, cpld + CPLD_CCD_DIR1);
+//	}
 }
 EXPORT_SYMBOL(enable_lcd);
 
@@ -533,10 +608,11 @@ static struct davinci_uart_config uart_config __initdata = {
 
 static void __init dm365_leopard_map_io(void)
 {
-	/* setup input configuration for VPFE input devices */
-	dm365_set_vpfe_config(&vpfe_cfg);
 	/* setup configuration for vpbe devices */
 	dm365_set_vpbe_display_config(&vpbe_display_cfg);
+	/* setup input configuration for VPFE input devices */
+	dm365_set_vpfe_config(&vpfe_cfg);
+
 	dm365_init();
 }
 
@@ -555,6 +631,9 @@ static __init void dm365_leopard_init(void)
 	dm365_init_asp(&dm365_leopard_snd_data);
 	dm365_init_rtc();
 	dm365leopard_tlv320aic3x_configure();
+#if defined(CONFIG_KEYBOARD_GPIO) || defined(CONFIG_KEYBOARD_GPIO_MODULE)
+	dm365leopard_keys_configure();
+#endif
 }
 
 static __init void dm365_leopard_irq_init(void)

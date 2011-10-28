@@ -1061,8 +1061,12 @@ void enable_lcd(void)
 {
 	/* Turn on LCD backlight for DM368 */
 	if (cpu_is_davinci_dm368()) {
+		u8 resets;
+
+		resets = __raw_readb(cpld + CPLD_RESETS);
 		/* Configure 9.25MHz clock to LCD */
-		__raw_writeb(0x80, cpld + CPLD_RESETS);
+		resets |= BIT(7);
+		__raw_writeb(resets, cpld + CPLD_RESETS);
 
 		/* CPLD_CONN_GIO17 is level high */
 		__raw_writeb(0xff, cpld + CPLD_CCD_IO1);
