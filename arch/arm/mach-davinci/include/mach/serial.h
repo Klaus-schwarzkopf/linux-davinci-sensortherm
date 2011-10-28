@@ -13,8 +13,9 @@
 
 #include <mach/hardware.h>
 
-#define DAVINCI_MAX_NR_UARTS	3
+#define DAVINCI_MAX_NR_UARTS	2
 #define DAVINCI_UART0_BASE	(IO_PHYS + 0x20000)
+//#define DAVINCI_UART1_BASE	(IO_PHYS + 0x106000)
 #define DAVINCI_UART1_BASE	(IO_PHYS + 0x20400)
 #define DAVINCI_UART2_BASE	(IO_PHYS + 0x20800)
 

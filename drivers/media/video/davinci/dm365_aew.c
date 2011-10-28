@@ -45,7 +45,6 @@ static struct cdev c_dev;
 int aew_validate_parameters(void)
 {
 	int result = 0;
-
 	/* Check horizontal Count */
 	if ((aew_dev_configptr->config->window_config.hz_cnt <
 	     AEW_WINDOW_HORIZONTAL_COUNT_MIN)
@@ -192,7 +191,7 @@ int aew_hardware_setup(void)
 	unsigned long adr;
 	unsigned long size;
 	unsigned int busyaew;
-
+	int window_count;
 	/* Get the value of PCR register */
 	busyaew = aew_get_hw_state();
 
@@ -226,7 +225,7 @@ int aew_hardware_setup(void)
 	 * Allocat the buffers as per the new buffer size
 	 * Allocate memory for old buffer
 	 */
-	if (aew_dev_configptr->config->out_format == AEW_OUT_SUM_ONLY)
+	/*if (aew_dev_configptr->config->out_format == AEW_OUT_SUM_ONLY)
 		buff_size = (aew_dev_configptr->config->window_config.hz_cnt) *
 			    (aew_dev_configptr->config->window_config.vt_cnt) *
 				AEW_WINDOW_SIZE_SUM_ONLY;
@@ -234,6 +233,40 @@ int aew_hardware_setup(void)
 		buff_size = (aew_dev_configptr->config->window_config.hz_cnt) *
 			    (aew_dev_configptr->config->window_config.vt_cnt) *
 				AEW_WINDOW_SIZE;
+	*/
+
+	window_count= (aew_dev_configptr->config->window_config.hz_cnt) *
+				  (aew_dev_configptr->config->window_config.vt_cnt + 1);
+	if (aew_dev_configptr->config->out_format == AEW_OUT_SUM_ONLY){
+		int w=0, cb=0, ec=0, ext=0, win8=0, hor_cont=0;
+		while (w < (window_count)) {
+			if (win8 == 8){
+				cb++;
+				win8 = 0;
+				ext++;
+			} else {
+				if (hor_cont == aew_dev_configptr->config->window_config.hz_cnt){
+					if (((ext) % 2) != 0){
+						ec++;
+					}
+					ext=0;
+					hor_cont=0;
+				} else{
+					w++;
+					win8++;
+					hor_cont++;
+					ext++;
+				}
+			}
+		}
+		buff_size = (cb + 1 + ec + window_count)* AEW_WINDOW_SIZE_SUM_ONLY;
+
+	}else
+		buff_size = ((aew_dev_configptr->config->window_config.hz_cnt) *
+			    (aew_dev_configptr->config->window_config.vt_cnt + 1) +
+				(aew_dev_configptr->config->window_config.hz_cnt) *
+			    (aew_dev_configptr->config->window_config.vt_cnt + 1) *
+				1/8 )*AEW_WINDOW_SIZE;
 
 	aew_dev_configptr->buff_old =
 	    (void *)__get_free_pages(GFP_KERNEL | GFP_DMA,
@@ -462,7 +495,6 @@ static int aew_ioctl(struct inode *inode, struct file *filep,
 		 * and will set all the registers for AF engine
 		 */
 	case AEW_S_PARAM:
-
 		/* Copy config structure passed by user */
 		if (copy_from_user(aew_dev_configptr->config,
 				   (struct aew_configuration *)arg,
@@ -471,7 +503,6 @@ static int aew_ioctl(struct inode *inode, struct file *filep,
 			mutex_unlock(&aew_dev_configptr->read_blocked);
 			return -EFAULT;
 		}
-
 		/* Call aew_hardware_setup to perform register configuration */
 		result = aew_hardware_setup();
 		if (!result) {
@@ -512,10 +543,10 @@ static int aew_ioctl(struct inode *inode, struct file *filep,
 			dev_err(aewdev,
 				"Error : AEW Hardware is not configured.\n");
 			result = -EINVAL;
-		} else
+		} else{
 			/* Enable AF Engine */
 			aew_engine_setup(aewdev, 1);
-		break;
+		}break;
 
 		/* This ioctl is used to disable AEW Engine */
 	case AEW_DISABLE:
@@ -550,7 +581,6 @@ static ssize_t aew_read(struct file *filep, char *kbuff,
 		dev_dbg(aewdev, "Read Call : busy  : %d\n", ret);
 		return -EBUSY;
 	}
-
 	/* First Check the size given by user */
 	if (size < aew_dev_configptr->size_window) {
 		/*
@@ -583,7 +613,6 @@ static ssize_t aew_read(struct file *filep, char *kbuff,
 		/* Disable the interrupts and then swap the buffers */
 		dev_dbg(aewdev, "READING............\n");
 		disable_irq(6);
-
 		/* New Statistics are availaible */
 		aew_dev_configptr->buffer_filled = 0;
 
@@ -594,7 +623,6 @@ static ssize_t aew_read(struct file *filep, char *kbuff,
 
 		/* Interrupts are enabled */
 		enable_irq(6);
-
 		/*
 		 * Copy the entire statistics located in application
 		 * buffer to user space
@@ -604,9 +632,9 @@ static ssize_t aew_read(struct file *filep, char *kbuff,
 			dev_err(aewdev, "Error : Read Fault\n");
 			mutex_unlock(&(aew_dev_configptr->read_blocked));
 			return -EFAULT;
-		} else
+		} else{
 			result = aew_dev_configptr->size_window;
-
+		}
 		dev_dbg(aewdev, "Reading Done........................\n");
 	}
 

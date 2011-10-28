@@ -65,12 +65,12 @@ static inline void phy_on(void)
 	/* power everything up; start the on-chip PHY and its PLL */
 	phy_ctrl &= ~(USBPHY_OSCPDWN | USBPHY_OTGPDWN | USBPHY_PHYPDWN);
 	phy_ctrl |= USBPHY_SESNDEN | USBPHY_VBDTCTEN | USBPHY_PHYPLLON;
-	if (cpu_is_davinci_dm646x()) {
-		phy_ctrl |= USBPHY_NDATAPOL | USBPHY_SESSION_VBUS;
-		phy_ctrl |= is_peripheral_enabled() ? USBPHY_PERI_USBID :
-						phy_ctrl;
-		phy_ctrl &= ~USBPHY_VBDTCTEN;
-	}
+//	if (cpu_is_davinci_dm646x()) {
+//		phy_ctrl |= USBPHY_NDATAPOL | USBPHY_SESSION_VBUS;
+//		phy_ctrl |= is_peripheral_enabled() ? USBPHY_PERI_USBID :
+//						phy_ctrl;
+//		phy_ctrl &= ~USBPHY_VBDTCTEN;
+//	}
 	if (cpu_is_davinci_dm365()) {
 		/*
 		 * DM365 PHYCLKFREQ field [15:12] is set to 2

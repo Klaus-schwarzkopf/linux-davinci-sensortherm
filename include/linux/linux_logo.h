@@ -42,6 +42,7 @@ extern const struct linux_logo logo_mac_clut224;
 extern const struct linux_logo logo_parisc_clut224;
 extern const struct linux_logo logo_sgi_clut224;
 extern const struct linux_logo logo_sun_clut224;
+extern const struct linux_logo logo_st_clut224;
 extern const struct linux_logo logo_superh_mono;
 extern const struct linux_logo logo_superh_vga16;
 extern const struct linux_logo logo_superh_clut224;

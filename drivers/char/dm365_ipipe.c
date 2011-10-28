@@ -383,7 +383,8 @@ static int ipipe_set_ipipe_if_address(void *config, unsigned int address);
 #define IPIPE_MAX_OUTPUT_WIDTH_B	640
 
 /* Based on max resolution supported. QXGA */
-#define IPIPE_MAX_OUTPUT_HEIGHT_A	1536
+//#define IPIPE_MAX_OUTPUT_HEIGHT_A	1536
+#define IPIPE_MAX_OUTPUT_HEIGHT_A	2197
 /* Based on max resolution supported. VGA */
 #define IPIPE_MAX_OUTPUT_HEIGHT_B	480
 
@@ -450,7 +451,7 @@ struct imp_hw_interface dm365_ipipe_interface = {
 	.alloc_config_block = ipipe_alloc_config_block,
 	.dealloc_config_block = ipipe_dealloc_config_block,
 	.alloc_user_config_block = ipipe_alloc_user_config_block,
-	.dealloc_config_block = ipipe_dealloc_user_config_block,
+	.dealloc_user_config_block = ipipe_dealloc_user_config_block,
 	.set_user_config_defaults = ipipe_set_user_config_defaults,
 	.set_preview_config = ipipe_set_preview_config,
 	.set_resizer_config = ipipe_set_resize_config,
@@ -623,7 +624,7 @@ static int ipipe_do_hw_setup(struct device *dev, void *config)
 static void ipipe_get_irq(struct irq_numbers *irq)
 {
 	irq->sdram = IRQ_PRVUINT;
-	irq->update = -1;
+	irq->update = 4;
 }
 
 static unsigned int ipipe_rsz_chain_state(void)
@@ -3708,7 +3709,7 @@ static int ipipe_set_preview_config(struct device *dev,
 {
 	int ret = 0;
 	struct ipipe_params *param = (struct ipipe_params *)config;
-	dev_err(dev, "ipipe_set_preview_config\n");
+	dev_dbg(dev, "ipipe_set_preview_config\n");
 
 	if ((ISNULL(user_config)) || (ISNULL(config))) {
 		dev_err(dev, "Invalid user_config or config ptr\n");

@@ -62,6 +62,10 @@ config LOGO_SUN_CLUT224
 	depends on SPARC
 	default y
 
+config LOGO_ST_CLUT224
+	bool "224-color Sensortherm Linux logo"
+	default y
+
 config LOGO_SUPERH_MONO
 	bool "Black and white SuperH Linux logo"
 	depends on SUPERH

@@ -127,6 +127,7 @@ char *davinci_modes[] = {
 	VID_ENC_STD_640x350,
 	VID_ENC_STD_480x272,
 	VID_ENC_STD_800x480,
+	VID_ENC_STD_PRGB_DEFAULT,
 	""
 };
 
@@ -931,6 +932,10 @@ static void davinci_enc_set_prgb(struct vid_enc_mode_info *mode_info)
 	dispc_reg_out(VENC_VMOD, 0x2011);
 	dispc_reg_out(VENC_LCDOUT, 0x1);
 
+	//FIXME
+//	dispc_reg_out(VENC_DCLKPTN0, 0x3);
+//	dispc_reg_out(VENC_DCLKCTL, 0x3);
+
 	if (cpu_is_davinci_dm368()) {
 		/* Turn on LCD display */
 		mdelay(200);
@@ -1178,7 +1183,8 @@ void davinci_enc_priv_setmode(struct vid_enc_device_mgr *mgr)
 		davinci_enc_set_525p(&mgr->current_mode);
 	} else if (strcmp(mgr->current_mode.name, VID_ENC_STD_576P_50) == 0) {
 		davinci_enc_set_625p(&mgr->current_mode);
-	} else if (strcmp(mgr->current_mode.name, VID_ENC_STD_640x480) == 0 ||
+	} else if (strcmp(mgr->current_mode.name, VID_ENC_STD_320x240) == 0 ||
+		strcmp(mgr->current_mode.name, VID_ENC_STD_640x480) == 0 ||
 		strcmp(mgr->current_mode.name, VID_ENC_STD_640x400) == 0 ||
 		strcmp(mgr->current_mode.name, VID_ENC_STD_640x350) == 0 ||
 		strcmp(mgr->current_mode.name, VID_ENC_STD_480x272) == 0 ||
@@ -1210,6 +1216,8 @@ void davinci_enc_priv_setmode(struct vid_enc_device_mgr *mgr)
 			davinci_enc_set_basep(0, 0xd0, 10);
 		} else
 			davinci_enc_set_1080i(&mgr->current_mode);
+	} else if (strcmp(mgr->current_mode.name, VID_ENC_STD_PRGB_DEFAULT) == 0) {
+		davinci_enc_set_prgb(&mgr->current_mode);
 	}
 
 	/* turn off ping-pong buffer and field inversion to fix

@@ -272,8 +272,11 @@ static int nand_davinci_calculate_4bit(struct mtd_info *mtd,
 		const u_char *dat, u_char *ecc_code)
 {
 	struct davinci_nand_info *info = to_davinci_nand(mtd);
+	struct nand_chip *chip = mtd->priv;
 	u32 raw_ecc[4], *p;
-	unsigned i;
+	unsigned int buffer_ecc[10];
+	unsigned int ff_ecc_code[10] = {0x3f, 0x27, 0x56, 0xf5, 0x29, 0xd8, 0x61, 0xd9, 0x9d, 0x14};
+	unsigned i,j;
 
 	/* After a read, terminate ECC calculation by a dummy read
 	 * of some 4-bit ECC register.  ECC covers everything that
@@ -291,12 +294,36 @@ static int nand_davinci_calculate_4bit(struct mtd_info *mtd,
 	 * ROM boot loader uses this same packing scheme.
 	 */
 	nand_davinci_readecc_4bit(info, raw_ecc);
-	for (i = 0, p = raw_ecc; i < 2; i++, p += 2) {
-		*ecc_code++ =   p[0]        & 0xff;
-		*ecc_code++ = ((p[0] >>  8) & 0x03) | ((p[0] >> 14) & 0xfc);
-		*ecc_code++ = ((p[0] >> 22) & 0x0f) | ((p[1] <<  4) & 0xf0);
-		*ecc_code++ = ((p[1] >>  4) & 0x3f) | ((p[1] >> 10) & 0xc0);
-		*ecc_code++ =  (p[1] >> 18) & 0xff;
+	for (i = 0, j = 0, p = raw_ecc; i < 2; i++, p += 2) {
+		buffer_ecc[j++] =   p[0]        & 0xff;
+		buffer_ecc[j++] = ((p[0] >>  8) & 0x03) | ((p[0] >> 14) & 0xfc);
+		buffer_ecc[j++] = ((p[0] >> 22) & 0x0f) | ((p[1] <<  4) & 0xf0);
+		buffer_ecc[j++] = ((p[1] >>  4) & 0x3f) | ((p[1] >> 10) & 0xc0);
+		buffer_ecc[j++] =  (p[1] >> 18) & 0xff;
+	}
+
+	/* Detect the bogus ECC code used for all 0xFF pages */
+	for (i = 0; i < 10; i++) {
+		if (buffer_ecc[i] != ff_ecc_code[i])
+			goto finish;
+	}
+
+	/* To be truely sure, check the page is full of 0xFF before doing this checksum */
+	for (i = 0; i < chip->ecc.size; i++) {
+		if (dat[i] != 0xFF)
+			goto finish;
+	}
+	
+	/* This is the ECC code for a page full of 0xFF, let's write it full of 0xFF */
+	for (i = 0; i < 10; i++) {
+	    ecc_code[i] = 0xFF;
+	}
+
+	return 0;
+
+finish:
+	for (i = 0; i < 10; i++) {
+	    ecc_code[i] = buffer_ecc[i];
 	}
 
 	return 0;

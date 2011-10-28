@@ -32,23 +32,30 @@ obj-$(CONFIG_USB_LANGWELL)	+= langwell_udc.o
 #
 # USB gadget drivers
 #
-g_zero-objs			:= zero.o
+g_zero-objs				:= zero.o
 g_audio-objs			:= audio.o
 g_ether-objs			:= ether.o
 g_serial-objs			:= serial.o
-g_midi-objs			:= gmidi.o
+g_midi-objs				:= gmidi.o
 gadgetfs-objs			:= inode.o
 g_file_storage-objs		:= file_storage.o
+g_mass_storage-objs		:= mass_storage.o
 g_printer-objs			:= printer.o
-g_cdc-objs			:= cdc2.o
+g_cdc-objs				:= cdc2.o
+g_cdc_acm_ms-objs		:= cdc_acm_ms.o
+g_multi-objs			:= multi.o
+g_acm_ms-y			:= acm_ms.o
 
 obj-$(CONFIG_USB_ZERO)		+= g_zero.o
 obj-$(CONFIG_USB_AUDIO)		+= g_audio.o
 obj-$(CONFIG_USB_ETH)		+= g_ether.o
 obj-$(CONFIG_USB_GADGETFS)	+= gadgetfs.o
 obj-$(CONFIG_USB_FILE_STORAGE)	+= g_file_storage.o
+obj-$(CONFIG_USB_MASS_STORAGE)	+= g_mass_storage.o
 obj-$(CONFIG_USB_G_SERIAL)	+= g_serial.o
 obj-$(CONFIG_USB_G_PRINTER)	+= g_printer.o
 obj-$(CONFIG_USB_MIDI_GADGET)	+= g_midi.o
 obj-$(CONFIG_USB_CDC_COMPOSITE) += g_cdc.o
-
+obj-$(CONFIG_USB_CDC_ACM_MS_COMPOSITE) += g_cdc_acm_ms.o
+obj-$(CONFIG_USB_G_MULTI)	+= g_multi.o
+obj-$(CONFIG_USB_G_ACM_MS)	+= g_acm_ms.o

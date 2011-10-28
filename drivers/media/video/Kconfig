@@ -635,6 +635,18 @@ config DAVINCI_LOGICPD_ENCODER
 	  To compile this driver as a module, choose M here: the
 	  module will be called logicpd_encoder.
 
+config DAVINCI_GENERIC_PRGB_ENCODER
+	tristate "Generic PRGB Encoder support"
+	depends on (DAVINCI_ENC_MNGR)
+	default y
+	help
+	  Enable support for Generic PRGB encoder.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called generic_prgb_encoder.
+
+	  The encoder requires the PRGB configuration on the board file
+
 config DAVINCI_AVNET_ENCODER
 	tristate "AVNET LCD Encoder support"
 	depends on (DAVINCI_ENC_MNGR)
@@ -1015,6 +1027,8 @@ config SOC_CAMERA_MT9V022
 	select GPIO_PCA953X if MT9V022_PCA9536_SWITCH
 	help
 	  This driver supports MT9V022 cameras from Micron
+
+source "drivers/media/video/sensortherm/Kconfig"
 
 config SOC_CAMERA_TW9910
 	tristate "tw9910 support"

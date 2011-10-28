@@ -1207,11 +1207,10 @@ static int aic3x_init(struct snd_soc_codec *codec)
 	aic3x_write(codec, LDAC_VOL, DEFAULT_VOL | MUTE_ON);
 	aic3x_write(codec, RDAC_VOL, DEFAULT_VOL | MUTE_ON);
 
-	/* DAC to HP default volume and route to Output mixer */
-	aic3x_write(codec, DACL1_2_HPLOUT_VOL, DEFAULT_VOL | ROUTE_ON);
-	aic3x_write(codec, DACR1_2_HPROUT_VOL, DEFAULT_VOL | ROUTE_ON);
-	aic3x_write(codec, DACL1_2_HPLCOM_VOL, DEFAULT_VOL | ROUTE_ON);
-	aic3x_write(codec, DACR1_2_HPRCOM_VOL, DEFAULT_VOL | ROUTE_ON);
+	/* DAC to HP max volume and route to Output mixer */
+	aic3x_write(codec, DACL1_2_HPLOUT_VOL, 0x80 | ROUTE_ON);
+	aic3x_write(codec, DACR1_2_HPROUT_VOL, 0x80 | ROUTE_ON);
+
 	/* DAC to Line Out default volume and route to Output mixer */
 	aic3x_write(codec, DACL1_2_LLOPM_VOL, DEFAULT_VOL | ROUTE_ON);
 	aic3x_write(codec, DACR1_2_RLOPM_VOL, DEFAULT_VOL | ROUTE_ON);
@@ -1265,6 +1264,10 @@ static int aic3x_init(struct snd_soc_codec *codec)
 	/* Line2 to Mono Out default volume, disconnect from Output Mixer */
 	aic3x_write(codec, LINE2L_2_MONOLOPM_VOL, DEFAULT_VOL);
 	aic3x_write(codec, LINE2R_2_MONOLOPM_VOL, DEFAULT_VOL);
+
+	/* Enabling the microphone by setting its gain to 0dB */
+	aic3x_write(codec, MIC3LR_2_LADC_CTRL, 0x0F);
+	aic3x_write(codec, MIC3LR_2_RADC_CTRL, 0xF0);
 
 	/* off, with power on */
 	aic3x_set_bias_level(codec, SND_SOC_BIAS_STANDBY);

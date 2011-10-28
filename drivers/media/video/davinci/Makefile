@@ -29,11 +29,12 @@ dm365_aew_driver-objs := dm365_aew.o
 obj-$(CONFIG_VIDEO_DM365_AEW)	+= dm365_aew_driver.o
 
 # DaVinci Encoder/Display Manager and Encoders
-obj-$(CONFIG_DAVINCI_OSD)		+= davinci_osd.o davinci_platform.o
+obj-$(CONFIG_DAVINCI_OSD)		+= davinci_platform.o davinci_osd.o
 obj-$(CONFIG_DAVINCI_ENC_MNGR)		+= davinci_enc_mngr.o
 
 obj-$(CONFIG_DAVINCI_LOGICPD_ENCODER)	+= logicpd_encoder.o
 obj-$(CONFIG_DAVINCI_AVNET_ENCODER)	+= avnetlcd_encoder.o
 obj-$(CONFIG_DAVINCI_VPBE_ENCODER)	+= vpbe_encoder.o
+obj-$(CONFIG_DAVINCI_GENERIC_PRGB_ENCODER)	+= dm365_generic_prgb_encoder.o
 
 obj-$(CONFIG_VIDEO_DAVINCI_DISPLAY)	+= davinci_display.o

@@ -222,7 +222,7 @@ int previewer_doioctl(struct inode *inode, struct file *file,
 			if (user_mode != mode) {
 				dev_err(prev_dev,
 					"Operation mode doesn't match"
-					" with current hw mode\n");
+					" with current hw mode %i user_mod %i\n", mode, user_mode );
 				ret = -EINVAL;
 				goto ERROR;
 			}

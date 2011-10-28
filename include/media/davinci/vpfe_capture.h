@@ -68,7 +68,9 @@ enum vpfe_subdev_id {
 	VPFE_SUBDEV_TVP5146 = 1,
 	VPFE_SUBDEV_MT9T031 = 2,
 	VPFE_SUBDEV_TVP7002 = 3,
-   VPFE_SUBDEV_MT9P031 = 4,
+	VPFE_SUBDEV_MT9P031 = 4,
+	VPFE_SUBDEV_MT9V126 = 5,
+	VPFE_SUBDEV_MT9V113 = 6,
 };
 
 struct vpfe_subdev_info {
@@ -171,6 +173,8 @@ struct vpfe_device {
 	int std_index;
 	/* IRQ number for DMA transfer completion at the image processor */
 	unsigned int imp_dma_irq;
+	/* IRQ number for Update resizer imp registers */
+	unsigned int imp_update_irq;
 	/* CCDC IRQs used when CCDC/ISIF output to SDRAM */
 	unsigned int ccdc_irq0;
 	unsigned int ccdc_irq1;

@@ -357,10 +357,10 @@ struct prev_continuous_config dm365_prev_cont_config_defs = {
 		.avg_filter_en = AVG_OFF,
 		.gain = 512,
 		.clip = 4095,
-		.colp_olop = IPIPE_GREEN_BLUE,
-		.colp_olep = IPIPE_BLUE,
-		.colp_elop = IPIPE_RED,
-		.colp_elep = IPIPE_GREEN_RED
+		.colp_olop = IPIPE_GREEN_RED,
+		.colp_olep = IPIPE_RED,
+		.colp_elop = IPIPE_BLUE,
+		.colp_elep = IPIPE_GREEN_BLUE
 	},
 };
 

@@ -1401,6 +1401,7 @@ tvp7002_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	struct tvp7002_decoder *decoder;
 	struct v4l2_subdev *sd;
 	/*int polarity;*/
+	u32 val;
 	int err;
 
 	/* Check if the adapter supports the needed features */
@@ -1409,6 +1410,13 @@ tvp7002_probe(struct i2c_client *client, const struct i2c_device_id *id)
 
 	if (!client->dev.platform_data) {
 		v4l2_err(client, "No platform data!!\n");
+		return -ENODEV;
+	}
+
+	/* Lets try with the only value we can */
+	val = i2c_smbus_read_byte_data(client, 0x0);
+	if (val != 0x2){
+		v4l2_err(client,"Unable to detect a valid revision of the tvp7002\n");
 		return -ENODEV;
 	}
 

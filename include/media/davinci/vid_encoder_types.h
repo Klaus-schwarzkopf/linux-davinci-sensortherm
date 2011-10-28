@@ -103,11 +103,13 @@ enum vid_enc_if_type {
 #define VID_ENC_STD_1080P_60     "1080P-60"
 #define VID_ENC_STD_480P_60      "480P-60"
 #define VID_ENC_STD_576P_50      "576P-50"
+#define VID_ENC_STD_320x240      "320x240"
 #define VID_ENC_STD_640x480      "640x480"
 #define VID_ENC_STD_640x400      "640x400"
 #define VID_ENC_STD_640x350      "640x350"
 #define VID_ENC_STD_480x272      "480x272"
 #define VID_ENC_STD_800x480      "800x480"
+#define VID_ENC_STD_PRGB_DEFAULT "DEF-PRGB-STD"
 #define VID_ENC_STD_NON_STANDARD "NON-STANDARD"
 
 /**

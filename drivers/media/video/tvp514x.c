@@ -535,6 +535,12 @@ static int tvp514x_querystd(struct v4l2_subdev *sd, v4l2_std_id *std_id)
 	if (err < 0)
 		return err;
 
+	/* Setup the default input in case s_routing haven't been invoked yet */
+	err = tvp514x_write_reg(sd, REG_INPUT_SEL,
+		decoder->tvp514x_regs[REG_INPUT_SEL].val);
+	if (err < 0)
+		return err;
+
 	msleep(LOCK_RETRY_DELAY);
 
 	/* get the current standard */
@@ -804,7 +810,7 @@ tvp514x_queryctrl(struct v4l2_subdev *sd, struct v4l2_queryctrl *qctrl)
 		err = v4l2_ctrl_query_fill(qctrl, 0, 1, 1, 1);
 		break;
 	default:
-		v4l2_err(sd, "invalid control id %d\n", qctrl->id);
+		v4l2_dbg(1, debug, sd, "control id %d not implemented\n", qctrl->id);
 		return err;
 	}
 
@@ -1323,6 +1329,7 @@ tvp514x_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	struct tvp514x_decoder *decoder;
 	struct v4l2_subdev *sd;
+	u8 chip_id_msb, chip_id_lsb, rom_ver;
 
 	/* Check if the adapter supports the needed features */
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_SMBUS_BYTE_DATA))
@@ -1330,6 +1337,26 @@ tvp514x_probe(struct i2c_client *client, const struct i2c_device_id *id)
 
 	if (!client->dev.platform_data) {
 		v4l2_err(client, "No platform data!!\n");
+		return -ENODEV;
+	}
+
+	/* Detect */
+	chip_id_msb = i2c_smbus_read_byte_data(client, REG_CHIP_ID_MSB);
+	chip_id_lsb = i2c_smbus_read_byte_data(client, REG_CHIP_ID_LSB);
+	rom_ver = i2c_smbus_read_byte_data(client, REG_ROM_VERSION);
+
+	v4l2_dbg(1, debug, client,
+		 "chip id detected msb:0x%x lsb:0x%x rom version:0x%x\n",
+		 chip_id_msb, chip_id_lsb, rom_ver);
+	if ((chip_id_msb != TVP514X_CHIP_ID_MSB)
+		|| ((chip_id_lsb != TVP5146_CHIP_ID_LSB)
+		&& (chip_id_lsb != TVP5147_CHIP_ID_LSB))) {
+		/* We didn't read the values we expected, so this must not be
+		 * an TVP5146/47.
+		 */
+		v4l2_err(client, "chip id mismatch msb:0x%x lsb:0x%x\n",
+				chip_id_msb, chip_id_lsb);
+		v4l2_err(client, "tvp514x decoder not detected\n");
 		return -ENODEV;
 	}
 
