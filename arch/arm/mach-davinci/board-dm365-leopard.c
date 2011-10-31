@@ -86,7 +86,7 @@
 /*#define NAND_BLOCK_SIZE		SZ_512K */
 #endif
 
-#if defined(CONFIG_SND_DM365_VOICE_CODEC) || defined(CONFIG_SND_DM365_CODEC)
+#if defined(CONFIG_SND_DM365_VOICE_CODEC) || defined(CONFIG_SND_DM365_CODEC) || defined(CONFIG_SND_DM365_AIC3X_CODEC)
 static struct snd_platform_data dm365_leopard_snd_data = {
 	.eventq_no = EVENTQ_3,
 };
