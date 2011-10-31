@@ -17,7 +17,7 @@ NAME = Man-Eating Seals of Antiquity
 MAKEFLAGS += -rR --no-print-directory
 
 # Add custom flags here to avoid conflict with updates
-EXTRAVERSION := $(EXTRAVERSION)-davinci1
+#EXTRAVERSION := $(EXTRAVERSION)-davinci1
 
 # We are using a recursive build, so we need to do a little thinking
 # to get the ordering right.
