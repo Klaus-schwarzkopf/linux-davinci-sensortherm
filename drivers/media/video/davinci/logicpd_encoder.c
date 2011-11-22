@@ -69,8 +69,8 @@ static struct logicpd_encoder_config logicpd_encoder_configuration = {
 					       .right_margin = 80,
 					       .upper_margin = 18,
 					       .lower_margin = 4,
-					       .hsync_len = 36,
-					       .vsync_len = 36,
+					       .hsync_len = 34,
+					       .vsync_len = 9,
 					       .flags = 0},	/* hsync -ve, vsync -ve */
 #else
 		      .standards[0] = {
@@ -82,10 +82,10 @@ static struct logicpd_encoder_config logicpd_encoder_configuration = {
 				       .yres = 240,
 				       .fps = {60, 1},
 				       .left_margin = 68,
-				       .right_margin = 68,
+				       .right_margin = 20,
 				       .upper_margin = 18,
-				       .lower_margin = 16,
-				       .hsync_len = 18,
+				       .lower_margin = 4,
+				       .hsync_len = 34,
 				       .vsync_len = 9,
 				       .flags = 0},	/* hsync -ve, vsync -ve */
 #endif

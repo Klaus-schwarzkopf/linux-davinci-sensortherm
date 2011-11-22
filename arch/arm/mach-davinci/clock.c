@@ -101,8 +101,11 @@ long clk_round_rate(struct clk *clk, unsigned long rate)
 		return -EINVAL;
 
 	if (clk->round_rate)
+	{
+		//printk( KERN_INFO "return clk->round_rate(clk, rate)\n");
 		return clk->round_rate(clk, rate);
-
+	}
+	//printk( KERN_INFO "return clk->rate\n");
 	return clk->rate;
 }
 EXPORT_SYMBOL(clk_round_rate);

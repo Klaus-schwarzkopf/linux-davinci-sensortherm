@@ -559,6 +559,23 @@ static void __init dm365_leopard_map_io(void)
 
 static __init void dm365_leopard_init(void)
 {
+
+//	unsigned long rate;
+//	struct clk *pll1_sysclk6;
+//	pll1_sysclk6 = clk_get(NULL, "pll1_sysclk6");
+//	if (IS_ERR(pll1_sysclk6))
+//		return;
+//
+//	rate =clk_get_rate(pll1_sysclk6);
+//	printk( KERN_INFO "pll1_sysclk6 %i\n", rate);
+//
+//	rate = clk_round_rate(pll1_sysclk6, 675000);
+//	printk( KERN_INFO "pll1_sysclk6 %i\n", rate);
+//	clk_set_rate(pll1_sysclk6, rate);
+//	rate =clk_get_rate(pll1_sysclk6);
+//	printk( KERN_INFO "pll1_sysclk6 %i\n", rate);
+
+
 	leopard_init_i2c();
 
 #ifdef ENABLE_UART1
@@ -592,6 +609,7 @@ static __init void dm365_leopard_init(void)
 #if defined(CONFIG_KEYBOARD_GPIO) || defined(CONFIG_KEYBOARD_GPIO_MODULE)
 		dm365leopard_keys_configure();
 #endif
+
 }
 
 static __init void dm365_leopard_irq_init(void)

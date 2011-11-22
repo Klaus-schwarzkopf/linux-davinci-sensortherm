@@ -928,13 +928,49 @@ static void davinci_enc_set_prgb(struct vid_enc_mode_info *mode_info)
 		       VENC_SYNCCTL_SYEH | VENC_SYNCCTL_HPL
 		       | VENC_SYNCCTL_VPL));
 
+
+#define DISPLAY_SETTINGS_NEW
+
+#ifdef DISPLAY_SETTINGS_NEW
+	//FIXME
+
+	dispc_reg_out(VENC_VIDCTL, 0x6000);
+
+	dispc_reg_out(VENC_HSPLS, 0x88);
+	dispc_reg_out(VENC_VSPLS, 0x9);
+	dispc_reg_out(VENC_HINT, 0x65F);
+	dispc_reg_out(VENC_HSTART, 0x110);
+	dispc_reg_out(VENC_HVALID, 0x500);
+	dispc_reg_out(VENC_VINT, 0x105);
+	dispc_reg_out(VENC_VSTART, 0x12);
+	dispc_reg_out(VENC_VSTARTA, 0x0);
+	dispc_reg_out(VENC_VVALID, 0xF0);
+	//dispc_reg_out(VENC_VVALIDA, 0x0);
+	dispc_reg_out(VENC_HSDLY, 0x0);
+	dispc_reg_out(VENC_VSDLY, 0x0);
+
+	//set clock rate /4
+	dispc_reg_out(VENC_DCLKCTL, 0x3);
+	dispc_reg_out(VENC_DCLKPTN0, 0xC);
+
+	dispc_reg_out(VENC_OSDCLK0, 0x3);
+	dispc_reg_out(VENC_OSDCLK1, 0x8);
+
+	osd_write_value(OSD_OSDWIN0XL, 0x140);
+	osd_write_value(OSD_OSDWIN1XL, 0x140);
+
+
+	osd_write_left_margin(0x44);
+	osd_write_upper_margin(0x12);
+
+#endif
+
+
+
 	/* Configure VMOD. No change in VENC bit */
 	dispc_reg_out(VENC_VMOD, 0x2011);
 	dispc_reg_out(VENC_LCDOUT, 0x1);
 
-	//FIXME
-//	dispc_reg_out(VENC_DCLKPTN0, 0x3);
-//	dispc_reg_out(VENC_DCLKCTL, 0x3);
 
 	if (cpu_is_davinci_dm368()) {
 		/* Turn on LCD display */

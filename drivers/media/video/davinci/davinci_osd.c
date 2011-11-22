@@ -124,6 +124,12 @@ static __inline__ u32 osd_merge(u32 mask, u32 val, u32 offset)
 	return new_val;
 }
 
+void osd_write_value(u32 offset, u32 val)
+{
+	__raw_writel(val, osd->osd_base + offset);
+}
+EXPORT_SYMBOL(osd_write_value);
+
 void osd_write_left_margin(u32 val)
 {
 	__raw_writel(val, osd->osd_base + OSD_BASEPX);

@@ -900,6 +900,8 @@ int davinci_disp_register_callback(struct davinci_disp_callback *callback);
 int davinci_disp_unregister_callback(struct davinci_disp_callback *callback);
 
 #ifdef __KERNEL__
+void osd_write_value(u32 offset, u32 val);
+
 void osd_write_left_margin(u32 val);
 
 void osd_write_upper_margin(u32 val);
