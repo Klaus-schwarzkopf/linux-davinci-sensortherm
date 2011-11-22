@@ -1,0 +1,7 @@
+config TI_MODULES
+	depends on ARCH_DAVINCI_DM365
+	bool "TI cmemk, irqk, edmak and dm365mmap kernel module"
+	help
+	  TI cmemk, irqk, edmak and dm365mmap kernel module.
+	  Borrowed from TI DVSDK 4
+
