@@ -16,7 +16,6 @@
 
 #include <linux/kernel.h>
 #include <linux/utsname.h>
-#include <linux/version.h>
 
 #include "u_serial.h"
 
@@ -71,7 +70,7 @@ static struct usb_device_descriptor device_desc = {
 	/* .iManufacturer = DYNAMIC */
 	/* .iProduct = DYNAMIC */
 	/* NO SERIAL NUMBER */
-	/*.bNumConfigurations =	DYNAMIC*/
+	/* .bNumConfigurations =	1, */
 };
 
 static struct usb_otg_descriptor otg_descriptor = {
@@ -119,19 +118,9 @@ static struct usb_gadget_strings *dev_strings[] = {
 static struct fsg_module_parameters fsg_mod_data = { .stall = 1 };
 FSG_MODULE_PARAMETERS(/* no prefix */, fsg_mod_data);
 
-static struct fsg_common fsg_common;
+static struct fsg_common *fsg_common;
 
 /*-------------------------------------------------------------------------*/
-
-
-static int fsg_bind_config(struct usb_composite_dev *cdev,
-		   struct usb_configuration *c,
-		   struct fsg_common *common)
-{
-
-	return fsg_add(c->cdev, c, common);
-
-}
 
 /*
  * We _always_ have both ACM and mass storage functions.
@@ -150,7 +139,7 @@ static int __init acm_ms_do_config(struct usb_configuration *c)
 	if (status < 0)
 		return status;
 
-	status = fsg_bind_config(c->cdev, c, &fsg_common);
+	status = fsg_add(c->cdev, c, fsg_common);
 	if (status < 0)
 		return status;
 
@@ -159,9 +148,7 @@ static int __init acm_ms_do_config(struct usb_configuration *c)
 
 static struct usb_configuration acm_ms_config_driver = {
 	.label			= DRIVER_DESC,
-#if	LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
-	.bind 			= acm_ms_do_config,
-#endif
+	.bind			= acm_ms_do_config,
 	.bConfigurationValue	= 1,
 	/* .iConfiguration = DYNAMIC */
 	.bmAttributes		= USB_CONFIG_ATT_SELFPOWER,
@@ -174,7 +161,6 @@ static int __init acm_ms_bind(struct usb_composite_dev *cdev)
 	int			gcnum;
 	struct usb_gadget	*gadget = cdev->gadget;
 	int			status;
-	void			*retp;
 
 	/* set up serial link layer */
 	status = gserial_setup(cdev->gadget, 1);
@@ -182,9 +168,9 @@ static int __init acm_ms_bind(struct usb_composite_dev *cdev)
 		return status;
 
 	/* set up mass storage function */
-	retp = fsg_common_from_params(&fsg_common, cdev, &fsg_mod_data);
-	if (IS_ERR(retp)) {
-		status = PTR_ERR(retp);
+	fsg_common = fsg_common_from_params(0, cdev, &fsg_mod_data);
+	if (IS_ERR(fsg_common)) {
+		status = PTR_ERR(fsg_common);
 		goto fail0;
 	}
 
@@ -222,22 +208,18 @@ static int __init acm_ms_bind(struct usb_composite_dev *cdev)
 	device_desc.iProduct = status;
 
 	/* register our configuration */
-#if	LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 32)
-	status = usb_add_config(cdev, &acm_ms_config_driver, acm_ms_do_config);
-#else
 	status = usb_add_config(cdev, &acm_ms_config_driver);
-#endif
 	if (status < 0)
 		goto fail1;
 
 	dev_info(&gadget->dev, "%s, version: " DRIVER_VERSION "\n",
 			DRIVER_DESC);
-	fsg_common_put(&fsg_common);
+	fsg_common_put(fsg_common);
 	return 0;
 
 	/* error recovery */
 fail1:
-	fsg_common_put(&fsg_common);
+	fsg_common_put(fsg_common);
 fail0:
 	gserial_cleanup();
 	return status;
@@ -254,9 +236,7 @@ static struct usb_composite_driver acm_ms_driver = {
 	.name		= "g_acm_ms",
 	.dev		= &device_desc,
 	.strings	= dev_strings,
-#if	LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 	.bind		= acm_ms_bind,
-#endif
 	.unbind		= __exit_p(acm_ms_unbind),
 };
 
@@ -266,11 +246,7 @@ MODULE_LICENSE("GPL v2");
 
 static int __init init(void)
 {
-#if	LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 32)
-	return usb_composite_probe(&acm_ms_driver, acm_ms_bind);
-#else
 	return usb_composite_register(&acm_ms_driver);
-#endif
 }
 module_init(init);
 
