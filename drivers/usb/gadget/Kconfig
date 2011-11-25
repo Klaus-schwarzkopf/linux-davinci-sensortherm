@@ -811,16 +811,6 @@ config USB_CDC_COMPOSITE
 
 	  Say "y" to link the driver statically, or "m" to build a
 	  dynamically linked module.
-	  
-config USB_CDC_ACM_MS_COMPOSITE
-	tristate "CDC Composite Device (ACM and mass storage)"
-	depends on BLOCK
-	help
-	  This driver provides two functions in one configuration:
-	  a mass storage, and a CDC ACM (serial port) link.
-
-	  Say "y" to link the driver statically, or "m" to build a
-	  dynamically linked module.	  
 
 config USB_G_ACM_MS
 	tristate "CDC Composite Device (ACM and mass storage)"
