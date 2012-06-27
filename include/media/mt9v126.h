@@ -9,6 +9,8 @@
 #define MT9V126_H_
 
 #define MT9V126_I2C_ADDR	(0x48)
+//#define MT9V126_I2C_ADDR	(0x5d) //second address
+
 #define MT9V126_MODULE_NAME	"mt9v126"
 
 /* mt9v126 selected register addresses */
