@@ -254,7 +254,7 @@ static int logicpd_encoder_setmode(struct vid_enc_mode_info *mode_info,
 		printk(KERN_ERR "NULL Pointer\n");
 		return -EINVAL;
 	}
-	printk(KERN_DEBUG "Start of logicpd_encoder_setmode..\n");
+	//printk(KERN_DEBUG "Start of logicpd_encoder_setmode..\n");
 	outindex = logicpd_encoder_channel_info.params.outindex;
 
 	if (mode_info->std) {
@@ -317,7 +317,7 @@ static int logicpd_encoder_setmode(struct vid_enc_mode_info *mode_info,
 		printk(KERN_ERR "Mode not supported..\n");
 		return -EINVAL;
 	}
-	printk(KERN_DEBUG "</logicpd_encoder_setmode>\n");
+	//printk(KERN_DEBUG "</logicpd_encoder_setmode>\n");
 	return err;
 }
 
@@ -330,7 +330,7 @@ static int logicpd_encoder_getmode(struct vid_enc_mode_info *mode_info,
 		printk(KERN_ERR "NULL Pointer\n");
 		return -EINVAL;
 	}
-	printk(KERN_DEBUG "<logicpd_encoder_getmode>\n");
+	//printk(KERN_DEBUG "<logicpd_encoder_getmode>\n");
 	outindex = logicpd_encoder_channel_info.params.outindex;
 	for (i = 0; i < LOGICPD_ENCODER_GRAPHICS_NUM_STD; i++) {
 		if (!strcmp(logicpd_encoder_channel_info.params.mode,
@@ -346,7 +346,7 @@ static int logicpd_encoder_getmode(struct vid_enc_mode_info *mode_info,
 		printk(KERN_ERR "Wiered. No mode info\n");
 		return -EINVAL;
 	}
-	printk(KERN_DEBUG "</logicpd_encoder_getmode>\n");
+	//printk(KERN_DEBUG "</logicpd_encoder_getmode>\n");
 	return err;
 }
 
