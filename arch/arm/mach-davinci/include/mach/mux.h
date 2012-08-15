@@ -304,6 +304,7 @@ enum davinci_dm365_index {
 	DM365_GPIO66,
 	DM365_GPIO80,
 	DM365_GPIO82,
+	DM365_GPIO99,
 	DM365_VCLK,
 
 	/* CLKOUT */

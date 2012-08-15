@@ -619,12 +619,13 @@ static __init void dm365_leopard_irq_init(void)
 	davinci_cfg_reg(DM365_GPIO23);
 	davinci_cfg_reg(DM365_GPIO24);
 	davinci_cfg_reg(DM365_GPIO25);
+	davinci_cfg_reg(DM365_GPIO99);
 
 	gpio_direction_input(GPIO(22));
 	gpio_direction_input(GPIO(23));
 	gpio_direction_input(GPIO(24));
 	gpio_direction_input(GPIO(25));
-
+	gpio_direction_output(GPIO(99), 1); //reset pin camera mt9v126
 	davinci_irq_init();
 
 }

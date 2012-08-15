@@ -590,6 +590,7 @@ MUX_CFG(DM365,	GPIO40,		4,   26,    3,	  0,	 false)
 MUX_CFG(DM365,	GPIO66,		2,   0,     3,	  0,	 false)
 MUX_CFG(DM365,	GPIO80,		1,   20,    3,	  1,	 false)
 MUX_CFG(DM365,	GPIO82,		1,   17,    1,    1,     false)
+MUX_CFG(DM365,	GPIO99,		0,   8,     1,    1,     false)
 MUX_CFG(DM365,	VCLK,		1,   22,    1,    0,     false)
 
 MUX_CFG(DM365,	CLKOUT1,	4,   16,    3,    3,	 false)
