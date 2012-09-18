@@ -1176,6 +1176,7 @@ void rsz_src_enable(int enable)
 	regw_rsz(enable, RSZ_SRC_EN);
 }
 
+
 int rsz_enable(int rsz_id, int enable)
 {
 	if (rsz_id == RSZ_A) {

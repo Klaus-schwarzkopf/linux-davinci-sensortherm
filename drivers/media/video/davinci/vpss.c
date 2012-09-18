@@ -157,9 +157,14 @@ static void dm365_select_ccdc_source(enum vpss_ccdc_source_sel src_sel)
  *
  *  This is called to update check and clear RSZ_INT_DMA interrupt
  */
+//void rsz_src_enable(int enable);
+//void ipipeif_set_enable(char en, unsigned int mode);
 int dm365_dma_complete_interrupt(void)
 {
 	u32 status;
+
+//	rsz_src_enable(0);
+//	ipipeif_set_enable(0,1);
 
 	status = isp5_read(DM365_VPSS_INTSTAT);	
 	/* Check and clear bit 15 */

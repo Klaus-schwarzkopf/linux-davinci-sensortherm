@@ -29,10 +29,13 @@ int reg_read(struct i2c_client *client, u16 reg) {
 	unsigned char data[2];
 	unsigned short val = 0;
 
+	int error_counter = 3;
+
 	//printk( KERN_INFO "reg_read ");
 
 	if (!client->adapter) {
 		err = -ENODEV;
+		printk	(KERN_INFO "\n adapter I2C write failed %s, no client adapter ", __func__);
 		return err;
 	} else {
 		// TODO: addr should be set up where else
@@ -42,7 +45,14 @@ int reg_read(struct i2c_client *client, u16 reg) {
 		msg->buf = data;
 		data[0] = (reg & I2C_TXRX_DATA_MASK_UPPER) >> I2C_TXRX_DATA_SHIFT;
 		data[1] = (reg & I2C_TXRX_DATA_MASK);
-		err = i2c_transfer(client->adapter, msg, 1);
+
+		while((err = i2c_transfer(client->adapter, msg, 1)) < 0 && error_counter>0)
+		{
+			printk	(KERN_INFO "\n transmit I2C write failed %s, error %i", __func__, err);
+			error_counter--;
+			//return err;
+		}
+		//err = i2c_transfer(client->adapter, msg, 1);
 		if (err >= 0) {
 			msg->flags = I2C_M_RD;
 			msg->len = I2C_TWO_BYTE_TRANSFER; /* 2 byte read */
@@ -51,11 +61,12 @@ int reg_read(struct i2c_client *client, u16 reg) {
 				val = ((data[0] & I2C_TXRX_DATA_MASK) << I2C_TXRX_DATA_SHIFT)
 						| (data[1] & I2C_TXRX_DATA_MASK);
 			}else{
-				printk	(KERN_INFO "\n I2C write failed");
+				printk	(KERN_INFO "\n receive I2C write failed %s, error %i", __func__, err);
+
 				return err;
 			}
 		}else{
-			printk	(KERN_INFO "\n I2C write failed");
+			printk	(KERN_INFO "\n transmit I2C write failed %s, error %i", __func__, err);
 			return err;
 		}
 	}
@@ -98,7 +109,7 @@ int reg_write(struct i2c_client *client, u16 reg, u16 val) {
 		}
 	}
 	if (err < 0) {
-		printk	(KERN_INFO "\n I2C write failed");
+		printk	(KERN_INFO "\n I2C write failed %s", __func__);
 	}
 	return err;
 }
