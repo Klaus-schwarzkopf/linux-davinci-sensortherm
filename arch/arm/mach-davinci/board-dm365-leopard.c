@@ -33,6 +33,8 @@
 #include <linux/input.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/eeprom.h>
+
+#include <asm/delay.h>
 #include <asm/setup.h>
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -229,6 +231,7 @@ static struct vpfe_subdev_info vpfe_sub_devs[] = {
 		},
 	},
 #endif
+
 #if defined(CONFIG_VIDEO_TVP7002) || defined(CONFIG_VIDEO_TVP7002_MODULE)
 	{
 		.module_name = "tvp7002",
@@ -557,6 +560,21 @@ static void __init dm365_leopard_map_io(void)
 	dm365_init();
 }
 
+static void init_mt9v126()
+{
+	// reset camera mt9v126
+	davinci_cfg_reg(DM365_GPIO99);
+
+
+	gpio_request(GPIO(99), "camera reset");
+
+	gpio_direction_output(GPIO(99), 0); //reset pin camera mt9v126
+
+	gpio_set_value(GPIO(99), 0);
+	udelay(20);
+	gpio_set_value(GPIO(99), 1);
+}
+
 static __init void dm365_leopard_init(void)
 {
 
@@ -577,6 +595,8 @@ static __init void dm365_leopard_init(void)
 
 
 	leopard_init_i2c();
+
+	init_mt9v126();
 
 #ifdef ENABLE_UART1
 	dm365leopard_uart1_configure();
@@ -610,6 +630,8 @@ static __init void dm365_leopard_init(void)
 		dm365leopard_keys_configure();
 #endif
 
+
+
 }
 
 static __init void dm365_leopard_irq_init(void)
@@ -619,13 +641,13 @@ static __init void dm365_leopard_irq_init(void)
 	davinci_cfg_reg(DM365_GPIO23);
 	davinci_cfg_reg(DM365_GPIO24);
 	davinci_cfg_reg(DM365_GPIO25);
-	davinci_cfg_reg(DM365_GPIO99);
+
 
 	gpio_direction_input(GPIO(22));
 	gpio_direction_input(GPIO(23));
 	gpio_direction_input(GPIO(24));
 	gpio_direction_input(GPIO(25));
-	gpio_direction_output(GPIO(99), 1); //reset pin camera mt9v126
+
 	davinci_irq_init();
 
 }

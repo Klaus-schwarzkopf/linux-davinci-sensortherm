@@ -1510,7 +1510,7 @@ static int ioctl(struct inode *inode, struct file *filp,
                 return -ERESTARTSYS;
             }
 
-            __E("GETPOOL: Trying to find a pool to fit size %d\n", reqsize);
+            //__E("GETPOOL: Trying to find a pool to fit size %d\n", reqsize);
 		//__E("npools %d, bi %i\n", npools[bi], bi);
             for (i=0; i<npools[bi]; i++) {
                 size = p_objs[bi][i].size;

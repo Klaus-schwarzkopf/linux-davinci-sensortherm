@@ -148,7 +148,7 @@ static void generic_i2c_clock_pulse(unsigned int scl_pin)
 		 * I2C bus recovery -- this is NOT portable
 		 * and should be reworked.
 		 */
-		davinci_cfg_reg(DM365_GPIO20);
+		davinci_cfg_reg(DM365_GPIO20); //SCL
 
 		/* Send high and low on the SCL line */
 		for (i = 0; i < 9; i++) {
@@ -169,7 +169,7 @@ static void generic_i2c_clock_pulse(unsigned int scl_pin)
 /* This routine does i2c bus recovery as specified in the
  * i2c protocol Rev. 03 section 3.16 titled "Bus clear"
  */
-static void i2c_recover_bus(struct davinci_i2c_dev *dev)
+static void i2c_recover_bus_old(struct davinci_i2c_dev *dev)
 {
 	u32 flag = 0;
 	struct davinci_i2c_platform_data *pdata = dev->dev->platform_data;
@@ -185,6 +185,42 @@ static void i2c_recover_bus(struct davinci_i2c_dev *dev)
 	flag = davinci_i2c_read_reg(dev, DAVINCI_I2C_MDR_REG);
 	flag |= DAVINCI_I2C_MDR_STP;
 	davinci_i2c_write_reg(dev, DAVINCI_I2C_MDR_REG, flag);
+}
+
+static void i2c_recover_bus(struct davinci_i2c_dev *dev)
+{
+
+
+	u32 flag = 0;
+	struct davinci_i2c_platform_data *pdata = dev->dev->platform_data;
+	printk	(KERN_INFO "\nI2C failed %s\n", __func__);
+
+	/* Send NACK to the slave */
+	flag = davinci_i2c_read_reg(dev, DAVINCI_I2C_MDR_REG);
+	flag |=  DAVINCI_I2C_MDR_NACK;
+	/* write the data into mode register */
+	davinci_i2c_write_reg(dev, DAVINCI_I2C_MDR_REG, flag);
+
+//	/* Send START to the slave */
+//	flag = davinci_i2c_read_reg(dev, DAVINCI_I2C_MDR_REG);
+//	flag |=  DAVINCI_I2C_MDR_STT;
+//	/* write the data into mode register */
+//	davinci_i2c_write_reg(dev, DAVINCI_I2C_MDR_REG, flag);
+
+	if (pdata)
+		generic_i2c_clock_pulse(pdata->scl_pin);
+
+//	/* Send START to the slave */
+//	flag = davinci_i2c_read_reg(dev, DAVINCI_I2C_MDR_REG);
+//	flag |=  DAVINCI_I2C_MDR_STT;
+//	/* write the data into mode register */
+//	davinci_i2c_write_reg(dev, DAVINCI_I2C_MDR_REG, flag);
+
+	/* Send STOP */
+	flag = davinci_i2c_read_reg(dev, DAVINCI_I2C_MDR_REG);
+	flag |= DAVINCI_I2C_MDR_STP;
+	davinci_i2c_write_reg(dev, DAVINCI_I2C_MDR_REG, flag);
+
 }
 
 static inline void davinci_i2c_reset_ctrl(struct davinci_i2c_dev *i2c_dev,
@@ -434,12 +470,19 @@ i2c_davinci_xfer_msg(struct i2c_adapter *adap, struct i2c_msg *msg, int stop)
 	if (dev->cmd_err & DAVINCI_I2C_STR_NACK) {
 		printk	(KERN_INFO "\n I2C failed %s, error %x flags %x, len %x, stop %x", __func__, dev->cmd_err, msg->flags, msg->len, stop);
 		if (msg->flags & I2C_M_IGNORE_NAK)
+		{
+			printk	(KERN_INFO "\n2 I2C failed %s, error %x flags %x, len %x, stop %x", __func__, dev->cmd_err, msg->flags, msg->len, stop);
+
 			return msg->len;
+		}
 		if (stop) {
+			printk	(KERN_INFO "\n3 I2C failed %s, error %x flags %x, len %x, stop %x", __func__, dev->cmd_err, msg->flags, msg->len, stop);
+
 			w = davinci_i2c_read_reg(dev, DAVINCI_I2C_MDR_REG);
 			w |= DAVINCI_I2C_MDR_STP;
 			davinci_i2c_write_reg(dev, DAVINCI_I2C_MDR_REG, w);
 		}
+
 		//return -EREMOTEIO;
 		return -ENXIO;
 	}
