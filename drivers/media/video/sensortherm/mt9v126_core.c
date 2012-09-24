@@ -33,6 +33,8 @@
 #include "rw_i2c_reg.h"
 #include "mt9v126_reg_init.h"
 
+#define DISABLE_WRITE_REGS
+
 /* mt9v126 i2c address 0x48
  * The platform has to define i2c_board_info
  * and call i2c_register_board_info() */
@@ -776,6 +778,7 @@ static int mt9v126_detect(struct i2c_client *client, int *model) {
 	//data = mt9v126_reg_write(client, MT9V126_CHIP_ENABLE, 1);
 	//dev_dbg(&client->dev, "write: %d\n", data);
 
+#ifndef DISABLE_WRITE_REGS
 	/* Read out the chip version register */
 	data = reg_read(client, MT9V126_CHIP_VERSION);
 
@@ -794,6 +797,7 @@ static int mt9v126_detect(struct i2c_client *client, int *model) {
 	write_regs(client,reg_list_init);
 
 	set_if_type(client, IF_TYPE);
+#endif
 	return 0;
 }
 //TODO
